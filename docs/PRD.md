@@ -12,7 +12,7 @@
 
 ### 1.1 背景
 
-`示例业务项目` 项目在 Prefect v3 之上构建了一套自研编排层，实现了 DAG 驡动流水线、Flow 自动发现与注册、LLM 批量推理、向量检索、容错重试等能力。然而这些能力深度耦合在 Product Hunt 业务代码中——编排引擎、数据组件、LLM 网关等通用基础设施与 业务 业务逻辑（业务数据模型、API 采集器、分类标准化算法等）混在同一 codebase。
+`示例业务项目` 项目在 Prefect v3 之上构建了一套自研编排层，实现了 DAG 驡动流水线、Flow 自动发现与注册、LLM 批量推理、向量检索、容错重试等能力。然而这些能力深度耦合在 Product Hunt 业务代码中——编排引擎、数据组件、LLM 网关等通用基础设施与 业务逻辑（业务数据模型、API 采集器、分类标准化算法等）混在同一 codebase。
 
 这套编排层本身是领域无关的。将其提取为独立框架后，任何需要"LLM 驱动的非结构化数据处理流水线"的项目都能直接复用。
 
@@ -28,7 +28,7 @@
 
 | #  | 目标                                           | 度量方式                               |
 | -- | -------------------------------------------- | ---------------------------------- |
-| G1 | 从 示例业务项目 中提取领域无关的框架层代码，消除 业务 业务耦合      | 框架代码中零 `示例业务项目` / `biz_` 引用   |
+| G1 | 从 示例业务项目 中提取领域无关的框架层代码，消除 业务耦合      | 框架代码中零 `示例业务项目` / `biz_` 引用   |
 | G2 | 保持与现有 示例业务项目 流水线的 100% 兼容              | 迁移后 源项目流水线行为不变，回归测试通过              |
 | G3 | 框架可独立安装 (`pip install`)，作为 示例业务项目 的依赖项 | `pyproject.toml` 完整，import 路径无业务前缀 |
 | G4 | 提供清晰的公共 API 和扩展点                             | 核心接口有类型标注 + docstring + 示例         |
@@ -232,7 +232,7 @@ class MyExtractor(GenericExtractor[MyItem]):
 
 ### 5.4 Runner 类型层 (Runner Types)
 
-从 `runners.py` 中提取通用 Runner，去掉 业务 业务前缀。
+从 `runners.py` 中提取通用 Runner，去掉 业务前缀。
 
 | 框架类名                 | 原 业务类名           | 职责                                                       |
 | -------------------- | ----------------- | -------------------------------------------------------- |
@@ -283,7 +283,7 @@ class MyExtractor(GenericExtractor[MyItem]):
 
 | 模块                   | 调整内容                                                                                                                                                                      |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `models/__init__.py` | 保留 `BaseItem`、`Point`、`ExtraContext`、`DeploymentContext`；移除 业务 业务模型 (`Post`、`Product`、`PostNeighbor` 等)                                                                   |
+| `models/__init__.py` | 保留 `BaseItem`、`Point`、`ExtraContext`、`DeploymentContext`；移除 业务模型 (`Post`、`Product`、`PostNeighbor` 等)                                                                   |
 | `models/llm.py`      | 保留 `CompletionConfig` 和 LLM 配置机制；业务专属的 model 实例定义移到 示例业务项目                                                                                                         |
 | `components/llm.py`  | 保留 `LLMExtractionStrategy`、`BatchLLMExtractionStrategy`、`LLMExtractor`、`GenericExtractor`；移除 `DemoItemExtractor`                                                              |
 | `components/data.py` | 保留 `DataFetcher`、`DataTransformer`、`EmbeddingHandler`、`SimilarityStats`；移除 `DemoRelativesTransformer`、`DemoCheck`、`DemoAscend` (业务专属逻辑) |
@@ -636,7 +636,7 @@ M1 ──► M2 ──► M3 ──► M5 ──► M7 ──► M8
 
 ```
 示例业务项目/src/orchestrations.py          # 业务专属 DAG 定义
-示例业务项目/src/flows/                      # 业务 业务 Flow 实现
+示例业务项目/src/flows/                      # 业务 Flow 实现
 示例业务项目/src/prompts/                    # 业务专属提示词
 示例业务项目/src/setup.py                    # 业务专属启动逻辑 (浏览器)
 示例业务项目/Dockerfile                      # 业务 部署

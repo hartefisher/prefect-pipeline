@@ -1,6 +1,6 @@
 # M2 — 基础设施层迁移（PRD）
 
-> **状态**: 未开始
+> **状态**: 已完成（commit d1754a5）
 > **前置**: M1
 > **GitHub Milestone**: `M2`
 > **总纲**: [../PRD.md](../PRD.md) · **设计**: [DESIGN.md](./DESIGN.md)
@@ -13,7 +13,7 @@
 
 | 源文件 (示例业务项目) | 目标文件 (框架) | 改造点 |
 | --- | --- | --- |
-| `src/lib/models/__init__.py` | `src/models/__init__.py` | 移除 业务 业务模型（`Post`、`Product`、`PostNeighbor` 等），保留 `BaseItem`、`Point`、`ExtraContext`、`DeploymentContext` |
+| `src/lib/models/__init__.py` | `src/models/__init__.py` | 移除 业务模型（`Post`、`Product`、`PostNeighbor` 等），保留 `BaseItem`、`Point`、`ExtraContext`、`DeploymentContext` |
 | `src/lib/models/llm.py` | `src/models/llm.py` | **Q3-A：零预置**——仅保留 `CompletionConfig` 配置模型与机制，~50 个 model 实例留在 示例业务项目 |
 | `src/lib/models/schemas.py` | `src/models/schemas.py` | 保留通用 `SchemaBase` |
 | `src/lib/exceptions.py` | `src/infra/exceptions.py` | 原样迁移：可重试/不可重试异常分类 |

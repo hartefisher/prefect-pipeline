@@ -25,7 +25,7 @@
 | # | 功能点 | 标签 |
 | --- | --- | --- |
 | 4.1 | 迁移 `components/helper.py` | feature |
-| 4.2 | 迁移 `components/data.py`（移除 业务 业务 Transformer） | feature |
+| 4.2 | 迁移 `components/data.py`（移除 业务 Transformer） | feature |
 | 4.3 | 迁移 `components/llm.py`（移除 DemoItemExtractor，Extractor 基类化） | feature |
 | 4.4 | 迁移 `components/vector.py` + `components/batch.py` | feature |
 | 4.5 | 迁移 `components/spider.py` — `SpiderBase` 通用化（Q5-A） | feature |
