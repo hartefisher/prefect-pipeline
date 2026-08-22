@@ -5,7 +5,13 @@ __pycache__/
 dist/
 build/
 .venv/
+.venv*/
 venv/
+
+# Tool caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
 
 # Environment
 .env

@@ -74,13 +74,17 @@ disallow_untyped_defs = true
 ignore_missing_imports = true
 plugins = ["pydantic.mypy"]
 exclude = ["src/generated", ".venv"]
+# pydantic v2 `computed_field` 标准写法为 `@computed_field` + `@property`，
+# mypy 的 prop-decorator 检查对其有误报，属已知误判，禁用。
+disable_error_code = ["prop-decorator"]
 
 [[tool.mypy.overrides]]
 module = "prefect_pipeline.*"
 disallow_untyped_defs = true
 
 [tool.pytest.ini_options]
-asyncio_mode = "strict"
+asyncio_mode = "auto"
+pythonpath = ["src"]
 testpaths = ["tests"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
