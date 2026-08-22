@@ -49,7 +49,7 @@ def prefect_ephemeral(): ...        # Prefect ephemeral API（测试内自动启
 
 ## 3. DAG 语义回归设计（功能点 6.2）
 
-回归测试 = 把 product_hunt 现有编排行为固化为断言，作为迁移正确性的最终裁决：
+回归测试 = 把 示例业务项目 现有编排行为固化为断言，作为迁移正确性的最终裁决：
 
 | 用例 | 断言 |
 | --- | --- |
@@ -95,6 +95,6 @@ steps: install (uv/pip) → ruff → mypy → pytest -m "not integration"
 
 | 风险 | 缓解 |
 | --- | --- |
-| Prefect ephemeral 模式与部署行为差异 | L3 仅验证 DAG 触发链路；真实调度差异靠 M7 PH 回归兜底 |
+| Prefect ephemeral 模式与部署行为差异 | L3 仅验证 DAG 触发链路；真实调度差异靠 M7 业务 回归兜底 |
 | Fake motor 聚合语义与真实 MongoDB 漂移 | Fake 只实现框架用到的聚合子集并文档化；C6.1 的 L4 补真实容器验证 |
 | 异步测试不稳定（事件循环泄漏） | pytest-asyncio strict 模式 + fixture 生命周期统一管理 |

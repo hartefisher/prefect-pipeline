@@ -12,7 +12,7 @@
 
 ### 1.1 背景
 
-`product_hunt` 项目在 Prefect v3 之上构建了一套自研编排层，实现了 DAG 驡动流水线、Flow 自动发现与注册、LLM 批量推理、向量检索、容错重试等能力。然而这些能力深度耦合在 Product Hunt 业务代码中——编排引擎、数据组件、LLM 网关等通用基础设施与 PH 业务逻辑（Post 数据模型、GraphQL 采集器、分类标准化算法等）混在同一 codebase。
+`示例业务项目` 项目在 Prefect v3 之上构建了一套自研编排层，实现了 DAG 驡动流水线、Flow 自动发现与注册、LLM 批量推理、向量检索、容错重试等能力。然而这些能力深度耦合在 Product Hunt 业务代码中——编排引擎、数据组件、LLM 网关等通用基础设施与 业务 业务逻辑（业务数据模型、API 采集器、分类标准化算法等）混在同一 codebase。
 
 这套编排层本身是领域无关的。将其提取为独立框架后，任何需要"LLM 驱动的非结构化数据处理流水线"的项目都能直接复用。
 
@@ -28,9 +28,9 @@
 
 | #  | 目标                                           | 度量方式                               |
 | -- | -------------------------------------------- | ---------------------------------- |
-| G1 | 从 product_hunt 中提取领域无关的框架层代码，消除 PH 业务耦合      | 框架代码中零 `product_hunt` / `ph_` 引用   |
-| G2 | 保持与现有 product_hunt 流水线的 100% 兼容              | 迁移后 PH 流水线行为不变，回归测试通过              |
-| G3 | 框架可独立安装 (`pip install`)，作为 product_hunt 的依赖项 | `pyproject.toml` 完整，import 路径无业务前缀 |
+| G1 | 从 示例业务项目 中提取领域无关的框架层代码，消除 业务 业务耦合      | 框架代码中零 `示例业务项目` / `biz_` 引用   |
+| G2 | 保持与现有 示例业务项目 流水线的 100% 兼容              | 迁移后 源项目流水线行为不变，回归测试通过              |
+| G3 | 框架可独立安装 (`pip install`)，作为 示例业务项目 的依赖项 | `pyproject.toml` 完整，import 路径无业务前缀 |
 | G4 | 提供清晰的公共 API 和扩展点                             | 核心接口有类型标注 + docstring + 示例         |
 | G5 | 推送到 GitHub 公开仓库                              | 仓库可 clone、README 可引导快速开始           |
 | G6 | 提供框架级测试套件：单元测试随代码迁移交付，集成/回归测试专项建设 | pytest 全绿；core 层覆盖率 ≥85%；DAG 语义回归通过 |
@@ -68,7 +68,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    用户项目 (如 product_hunt)               │
+│                    用户项目 (如 示例业务项目)               │
 │  ┌─────────────┐  ┌──────────────┐  ┌─────────────────┐  │
 │  │  flows/     │  │  prompts/    │  │  orchestrations  │  │
 │  │  (业务 Flow) │  │  (提示词)    │  │  (DAG 定义)      │  │
@@ -126,7 +126,7 @@
 
 框架的核心层，负责 DAG 定义、Flow 注册、部署上下文管理和下游触发。
 
-| 模块                 | 对应 product_hunt 源文件        | 职责                                                         |
+| 模块                 | 对应 示例业务项目 源文件        | 职责                                                         |
 | ------------------ | -------------------------- | ---------------------------------------------------------- |
 | `orchestration.py` | `src/lib/orchestration.py` | DAG 分析引擎，遍历编排图谱生成 node_map 和可视化文本                          |
 | `deployment.py`    | `src/lib/deployment.py`    | `Deployment` + `Node` 核心类，`>>` (序列) 和 `+` (并行) 运算符重载       |
@@ -232,11 +232,11 @@ class MyExtractor(GenericExtractor[MyItem]):
 
 ### 5.4 Runner 类型层 (Runner Types)
 
-从 `runners.py` 中提取通用 Runner，去掉 PH 业务前缀。
+从 `runners.py` 中提取通用 Runner，去掉 业务 业务前缀。
 
-| 框架类名                 | 原 PH 类名           | 职责                                                       |
+| 框架类名                 | 原 业务类名           | 职责                                                       |
 | -------------------- | ----------------- | -------------------------------------------------------- |
-| `PipelineFlow`       | `ProductHuntFlow` | 通用基类：时间窗口、filter、data_flag                               |
+| `PipelineFlow`       | `DemoFlow` | 通用基类：时间窗口、filter、data_flag                               |
 | `TransformationFlow` | 同名                | 数据转换：注入 `DataTransformer`，批量 upsert                      |
 | `ReasoningFlow`      | 同名                | LLM 推理：注入 `GenericExtractor` + `DataFetcher`，支持实时/批量两种模式 |
 | `EmbeddingFlow`      | 同名                | 向量化：注入 `EmbeddingHandler` + `DataFetcher`                |
@@ -247,21 +247,21 @@ class MyExtractor(GenericExtractor[MyItem]):
 
 ---
 
-## 6. 从 product_hunt 提取的改造清单
+## 6. 从 示例业务项目 提取的改造清单
 
 ### 6.1 需要泛化的硬编码
 
 | 位置                  | 当前硬编码                                          | 改造方案                                     |
 | ------------------- | ---------------------------------------------- | ---------------------------------------- |
-| `configs.py`        | `MACRO_VARIABLES = {"ph": [...]}`              | 改为框架不预置，由用户项目自行配置                        |
-| `configs.py`        | `PH_API_URL`, `PH_DEV_TOKEN` 等 PH 专属环境变量       | 移除，留在 product_hunt 项目内                   |
-| `runners.py`        | `class ProductHuntFlow: project_name = "ph"`   | 重命名为 `PipelineFlow`，`project_name` 由子类设置 |
-| `runners.py`        | `get_current_date()` 使用 `US/Pacific` 时区        | 改为可配置参数，默认 UTC                           |
-| `db.py`             | 30+ 个 `ph_posts_*` collection 常量               | 全部移除，collection 由用户项目自行定义                |
+| `configs.py`        | `MACRO_VARIABLES = {"demo": [...]}`              | 改为框架不预置，由用户项目自行配置                        |
+| `configs.py`        | `EXAMPLE_API_URL`, `EXAMPLE_DEV_TOKEN` 等 业务专属环境变量       | 移除，留在 示例业务项目 项目内                   |
+| `runners.py`        | `class DemoFlow: project_name = "demo"`   | 重命名为 `PipelineFlow`，`project_name` 由子类设置 |
+| `runners.py`        | `get_current_date()` 使用 `Asia/Shanghai` 时区        | 改为可配置参数，默认 UTC                           |
+| `db.py`             | 30+ 个 `biz_posts_*` collection 常量               | 全部移除，collection 由用户项目自行定义                |
 | `db.py`             | `WORKFLOW_DB = os.getenv("WORKFLOW_DB", "yc")` | 保留泛化版本                                   |
-| `error_handlers.py` | `handle_authorization()` 中的 PH GraphQL 逻辑      | 移除，留在 product_hunt 项目内                   |
-| `error_handlers.py` | `retry_scraping` 中的 PH 403 处理                  | 保留通用重试逻辑，PH 特定逻辑移出                       |
-| `components/llm.py` | `PostExtractor` 中的 `https://ph.com/{slug}`     | 移除 `PostExtractor`，留在 product_hunt       |
+| `error_handlers.py` | `handle_authorization()` 中的 源项目 API 鉴权 逻辑      | 移除，留在 示例业务项目 项目内                   |
+| `error_handlers.py` | `retry_scraping` 中的 业务专属 403 处理                  | 保留通用重试逻辑，业务 特定逻辑移出                       |
+| `components/llm.py` | `DemoItemExtractor` 中的 `https://example.com/{slug}`     | 移除 `DemoItemExtractor`，留在 示例业务项目       |
 
 ### 6.2 需要保留原样的模块 (无需泛化)
 
@@ -283,17 +283,17 @@ class MyExtractor(GenericExtractor[MyItem]):
 
 | 模块                   | 调整内容                                                                                                                                                                      |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `models/__init__.py` | 保留 `BaseItem`、`Point`、`ExtraContext`、`DeploymentContext`；移除 PH 业务模型 (`Post`、`Product`、`PostNeighbor` 等)                                                                   |
-| `models/llm.py`      | 保留 `CompletionConfig` 和 LLM 配置机制；PH 专属的 model 实例定义移到 product_hunt                                                                                                         |
-| `components/llm.py`  | 保留 `LLMExtractionStrategy`、`BatchLLMExtractionStrategy`、`LLMExtractor`、`GenericExtractor`；移除 `PostExtractor`                                                              |
-| `components/data.py` | 保留 `DataFetcher`、`DataTransformer`、`EmbeddingHandler`、`SimilarityStats`；移除 `StandardizationRelativesTransformer`、`CheckStandardization`、`AscendStandardization` (PH 业务逻辑) |
-| `error_handlers.py`  | 保留 `http_error_handler`、`llm_request_error_handler`、`retry_reasoning`、`generate_retry_tag`；移除 `handle_authorization`、`retry_scraping` 中的 PH 特定逻辑                          |
-| `runners.py`         | 重命名 `ProductHuntFlow` → `PipelineFlow`；时区改为可配置                                                                                                                            |
+| `models/__init__.py` | 保留 `BaseItem`、`Point`、`ExtraContext`、`DeploymentContext`；移除 业务 业务模型 (`Post`、`Product`、`PostNeighbor` 等)                                                                   |
+| `models/llm.py`      | 保留 `CompletionConfig` 和 LLM 配置机制；业务专属的 model 实例定义移到 示例业务项目                                                                                                         |
+| `components/llm.py`  | 保留 `LLMExtractionStrategy`、`BatchLLMExtractionStrategy`、`LLMExtractor`、`GenericExtractor`；移除 `DemoItemExtractor`                                                              |
+| `components/data.py` | 保留 `DataFetcher`、`DataTransformer`、`EmbeddingHandler`、`SimilarityStats`；移除 `DemoRelativesTransformer`、`DemoCheck`、`DemoAscend` (业务专属逻辑) |
+| `error_handlers.py`  | 保留 `http_error_handler`、`llm_request_error_handler`、`retry_reasoning`、`generate_retry_tag`；移除 `handle_authorization`、`retry_scraping` 中的 业务 特定逻辑                          |
+| `runners.py`         | 重命名 `DemoFlow` → `PipelineFlow`；时区改为可配置                                                                                                                            |
 
 ### 6.4 import 路径迁移
 
 ```
-# product_hunt 中现有路径
+# 示例业务项目 中现有路径
 from ..lib.runner_base import FlowRunnerBase
 from ..lib.deployment import Deployment
 from ..lib.configs import ENVIRONMENT
@@ -303,7 +303,7 @@ from prefect_pipeline.core.runner_base import FlowRunnerBase
 from prefect_pipeline.core.deployment import Deployment
 from prefect_pipeline.core.configs import ENVIRONMENT
 
-# product_hunt 迁移后 (作为框架使用者)
+# 示例业务项目 迁移后 (作为框架使用者)
 from prefect_pipeline import FlowRunnerBase, Deployment
 from prefect_pipeline.runners import PipelineFlow
 ```
@@ -499,7 +499,7 @@ DEEPSEEK_API_KEY=...
 | [M4](./milestones/M4-components/) | 组件层迁移 | components（data/llm/vector/helper/batch/spider）+ 单元测试 | 未开始 |
 | [M5](./milestones/M5-runners-api/) | Runner 类型层与公共 API | runners/ 子包 + 顶层导出 + 单元测试 | 未开始 |
 | [M6](./milestones/M6-testing/) | 框架级测试套件 | 测试基础设施（fakes）、DAG 语义回归、E2E 集成测试、覆盖率门槛 | 未开始 |
-| [M7](./milestones/M7-ph-migration/) | product_hunt 适配与回归 | PH 依赖切换 + 业务适配层 + 回归验证 | 未开始 |
+| [M7](./milestones/M7-demo-migration/) | 示例业务项目 适配与回归 | 业务 依赖切换 + 业务适配层 + 回归验证 | 未开始 |
 | [M8](./milestones/M8-release/) | 示例、文档与开源发布 | examples、architecture.md、LICENSE/CONTRIBUTING、敏感信息审查 | 未开始 |
 
 ### 依赖关系
@@ -519,7 +519,7 @@ M1 ──► M2 ──► M3 ──► M5 ──► M7 ──► M8
 ### M1: 框架骨架与工程基线 (当前)
 
 - [x] 创建 `prefect_pipeline/` 目录结构
-- [x] 更新 `.gitignore`，排除 `product_hunt/`
+- [x] 更新 `.gitignore`，排除 `示例业务项目/`
 - [x] 编写 PRD (本文档)
 - [x] 初始化 `README.md`
 - [ ] 初始化 `pyproject.toml`
@@ -535,7 +535,7 @@ M1 ──► M2 ──► M3 ──► M5 ──► M7 ──► M8
 | LICENSE         | 待添加   | 建议 MIT                                   |
 | README.md       | 待编写   | 快速开始 + 架构图 + API 概览                      |
 | pyproject.toml  | 待创建   | 包名 `prefect_pipeline`, Python >=3.12     |
-| .gitignore      | ✅ 已更新 | 排除 `product_hunt/`、`.env`、`generated/` 等 |
+| .gitignore      | ✅ 已更新 | 排除 `示例业务项目/`、`.env`、`generated/` 等 |
 | CONTRIBUTING.md | 待编写   | 开发流程 + 代码规范                              |
 | 敏感信息审查          | 待执行   | 确保无 API key / 私有 host / 内部 URL           |
 | GitHub Actions  | 可选    | 后续可加 lint + type check                   |
@@ -559,7 +559,7 @@ M1 ──► M2 ──► M3 ──► M5 ──► M7 ──► M8
 
 | 风险                         | 影响        | 缓解措施                        |
 | -------------------------- | --------- | --------------------------- |
-| import 路径迁移破坏 product_hunt | PH 流水线不可用 | M3 阶段做完整回归测试                |
+| import 路径迁移破坏 示例业务项目 | 源项目流水线不可用 | M3 阶段做完整回归测试                |
 | Prefect v3 API 变更          | 框架不兼容     | 锁定 Prefect minor 版本         |
 | litellm batch API 限制       | 批量推理不可用   | 保留实时推理作为 fallback           |
 | `generated/` 代码自动覆盖        | 手动修改丢失    | .gitignore 已排除；框架文档强调禁止手动编辑 |
@@ -576,10 +576,10 @@ M1 ──► M2 ──► M3 ──► M5 ──► M7 ──► M8
 | #   | 问题                                                 | 决策                                                                 |
 | ---- | -------------------------------------------------- | ------------------------------------------------------------------ |
 | Q1  | 框架名称 `prefect_pipeline` 是否合适？                      | ✅ **保持 `prefect_pipeline`**（Issue #1）                             |
-| Q2  | `retry_scraping` 完全移到 product_hunt，还是保留通用重试框架 + PH 适配层？ | ✅ **方案 B：通用重试框架 + PH 适配层**——框架保留通用 retry 装饰器（状态码分类、指数退避），PH 403 特殊处理通过参数/子类注入（Issue #3） |
+| Q2  | `retry_scraping` 完全移到 示例业务项目，还是保留通用重试框架 + 业务适配层？ | ✅ **方案 B：通用重试框架 + 业务适配层**——框架保留通用 retry 装饰器（状态码分类、指数退避），业务专属 403 特殊处理通过参数/子类注入（Issue #3） |
 | Q3  | `models/llm.py` 中的 ~50 个 LLM model 实例是否提供框架级默认配置？   | ✅ **方案 A：框架零预置**——仅保留 `CompletionConfig` 配置模型，所有实例由用户项目自定义（Issue #2） |
 | Q4  | 框架是否需要提供 Dockerfile 模板？                            | ✅ **暂不提供**（Issue #4）                                               |
-| Q5  | `Spider` / `CDPSpider` 组件是否纳入框架？                    | ✅ **方案 A：纳入框架**——提供通用 `SpiderBase`（请求调度、并发控制、重试接入），PH 专属解析逻辑留在 product_hunt（Issue #5） |
+| Q5  | `Spider` / `CDPSpider` 组件是否纳入框架？                    | ✅ **方案 A：纳入框架**——提供通用 `SpiderBase`（请求调度、并发控制、重试接入），业务专属解析逻辑留在 示例业务项目（Issue #5） |
 
 > 迁移过程中新产生的确认点以 `confirmation` 标签的 Issue 跟踪，决策后更新本表。
 
@@ -589,12 +589,12 @@ M1 ──► M2 ──► M3 ──► M5 ──► M7 ──► M8
 
 | #   | 验收项                              | 验证方式                                                                       |
 | --- | -------------------------------- | -------------------------------------------------------------------------- |
-| AC1 | 框架代码中零 `product_hunt` / `ph_` 引用 | `grep -ri "product_hunt\|ph_" prefect_pipeline/src/` 无输出                   |
+| AC1 | 框架代码中零 `示例业务项目` / `biz_` 引用 | `grep -ri "示例业务项目\|biz_" prefect_pipeline/src/` 无输出                   |
 | AC2 | 框架可独立安装                          | `pip install -e prefect_pipeline/` 成功                                      |
-| AC3 | product_hunt 迁移后流水线正常            | `cd product_hunt && python -m src.main` 正常启动                               |
+| AC3 | 示例业务项目 迁移后流水线正常            | `cd 示例业务项目 && python -m src.main` 正常启动                               |
 | AC4 | 框架推送到 GitHub 后可 clone            | `git clone <github_url>` 成功                                                |
 | AC5 | 框架无敏感信息                          | `grep -ri "api_key\|password\|secret" prefect_pipeline/src/` 仅匹配变量名定义，无实际值 |
-| AC6 | DAG 运算符语义不变                      | 迁移后 PH 流水线的 `orchestrations.py` 不需修改即可运行                                   |
+| AC6 | DAG 运算符语义不变                      | 迁移后 源项目流水线的 `orchestrations.py` 不需修改即可运行                                   |
 | AC7 | 测试套件全绿且达标                       | `pytest` 全部通过；`src/core/` 覆盖率 ≥85%，全包 ≥75%                                |
 | AC8 | DAG 语义回归通过                       | M6 的 DAG 语义回归测试（序列/并行/混合/peer 检查）全部通过                                  |
 
@@ -603,44 +603,44 @@ M1 ──► M2 ──► M3 ──► M5 ──► M7 ──► M8
 ## 附录 A: 现有源文件 → 框架目标文件映射
 
 ```
-product_hunt/src/lib/orchestration.py      → prefect_pipeline/src/core/orchestration.py
-product_hunt/src/lib/deployment.py         → prefect_pipeline/src/core/deployment.py
-product_hunt/src/lib/runner_base.py         → prefect_pipeline/src/core/runner_base.py
-product_hunt/src/lib/condition.py           → prefect_pipeline/src/core/condition.py
-product_hunt/src/lib/ns_converter.py        → prefect_pipeline/src/core/ns_converter.py
-product_hunt/src/lib/configs.py             → prefect_pipeline/src/core/configs.py (泛化)
-product_hunt/src/loader.py                  → prefect_pipeline/src/core/loader.py
-product_hunt/src/main.py                    → prefect_pipeline/src/main.py (泛化)
+示例业务项目/src/lib/orchestration.py      → prefect_pipeline/src/core/orchestration.py
+示例业务项目/src/lib/deployment.py         → prefect_pipeline/src/core/deployment.py
+示例业务项目/src/lib/runner_base.py         → prefect_pipeline/src/core/runner_base.py
+示例业务项目/src/lib/condition.py           → prefect_pipeline/src/core/condition.py
+示例业务项目/src/lib/ns_converter.py        → prefect_pipeline/src/core/ns_converter.py
+示例业务项目/src/lib/configs.py             → prefect_pipeline/src/core/configs.py (泛化)
+示例业务项目/src/loader.py                  → prefect_pipeline/src/core/loader.py
+示例业务项目/src/main.py                    → prefect_pipeline/src/main.py (泛化)
 
-product_hunt/src/lib/components/data.py     → prefect_pipeline/src/components/data.py (移除 PH 类)
-product_hunt/src/lib/components/llm.py      → prefect_pipeline/src/components/llm.py (移除 PostExtractor)
-product_hunt/src/lib/components/vector.py   → prefect_pipeline/src/components/vector.py
-product_hunt/src/lib/components/helper.py   → prefect_pipeline/src/components/helper.py
-product_hunt/src/lib/components/spider.py   → prefect_pipeline/src/components/spider.py (Q5 已决策纳入, 提供 SpiderBase)
-product_hunt/src/lib/components/batch.py    → prefect_pipeline/src/components/batch.py
+示例业务项目/src/lib/components/data.py     → prefect_pipeline/src/components/data.py (移除 业务类)
+示例业务项目/src/lib/components/llm.py      → prefect_pipeline/src/components/llm.py (移除 DemoItemExtractor)
+示例业务项目/src/lib/components/vector.py   → prefect_pipeline/src/components/vector.py
+示例业务项目/src/lib/components/helper.py   → prefect_pipeline/src/components/helper.py
+示例业务项目/src/lib/components/spider.py   → prefect_pipeline/src/components/spider.py (Q5 已决策纳入, 提供 SpiderBase)
+示例业务项目/src/lib/components/batch.py    → prefect_pipeline/src/components/batch.py
 
-product_hunt/src/lib/runners.py             → prefect_pipeline/src/runners/ (拆分为子包, 泛化)
-product_hunt/src/lib/db.py                  → prefect_pipeline/src/infra/db.py (移除 PH collections)
-product_hunt/src/lib/exceptions.py          → prefect_pipeline/src/infra/exceptions.py
-product_hunt/src/lib/error_handlers.py      → prefect_pipeline/src/infra/error_handlers.py (泛化)
-product_hunt/src/lib/utils.py               → prefect_pipeline/src/infra/utils.py
-product_hunt/src/lib/types.py               → prefect_pipeline/src/infra/types.py
+示例业务项目/src/lib/runners.py             → prefect_pipeline/src/runners/ (拆分为子包, 泛化)
+示例业务项目/src/lib/db.py                  → prefect_pipeline/src/infra/db.py (移除 业务 collections)
+示例业务项目/src/lib/exceptions.py          → prefect_pipeline/src/infra/exceptions.py
+示例业务项目/src/lib/error_handlers.py      → prefect_pipeline/src/infra/error_handlers.py (泛化)
+示例业务项目/src/lib/utils.py               → prefect_pipeline/src/infra/utils.py
+示例业务项目/src/lib/types.py               → prefect_pipeline/src/infra/types.py
 
-product_hunt/src/lib/models/__init__.py    → prefect_pipeline/src/models/__init__.py (移除 PH 模型)
-product_hunt/src/lib/models/llm.py          → prefect_pipeline/src/models/llm.py (移除 PH model 实例)
-product_hunt/src/lib/models/schemas.py      → prefect_pipeline/src/models/schemas.py (保留通用 SchemaBase)
-product_hunt/src/lib/vocabulary.py          → (评估是否纳入框架)
+示例业务项目/src/lib/models/__init__.py    → prefect_pipeline/src/models/__init__.py (移除 业务 模型)
+示例业务项目/src/lib/models/llm.py          → prefect_pipeline/src/models/llm.py (移除 业务 model 实例)
+示例业务项目/src/lib/models/schemas.py      → prefect_pipeline/src/models/schemas.py (保留通用 SchemaBase)
+示例业务项目/src/lib/vocabulary.py          → (评估是否纳入框架)
 ```
 
-## 附录 B: 不迁移的文件 (保留在 product_hunt)
+## 附录 B: 不迁移的文件 (保留在 示例业务项目)
 
 ```
-product_hunt/src/orchestrations.py          # PH 专属 DAG 定义
-product_hunt/src/flows/                      # PH 业务 Flow 实现
-product_hunt/src/prompts/                    # PH 专属提示词
-product_hunt/src/setup.py                    # PH 专属启动逻辑 (浏览器)
-product_hunt/Dockerfile                      # PH 部署
-product_hunt/deploy.sh                       # PH 部署脚本
-product_hunt/discussion/                     # 设计讨论文档
-product_hunt/notebooks/                      # 探索性 notebook
+示例业务项目/src/orchestrations.py          # 业务专属 DAG 定义
+示例业务项目/src/flows/                      # 业务 业务 Flow 实现
+示例业务项目/src/prompts/                    # 业务专属提示词
+示例业务项目/src/setup.py                    # 业务专属启动逻辑 (浏览器)
+示例业务项目/Dockerfile                      # 业务 部署
+示例业务项目/deploy.sh                       # 业务 部署脚本
+示例业务项目/discussion/                     # 设计讨论文档
+示例业务项目/notebooks/                      # 探索性 notebook
 ```

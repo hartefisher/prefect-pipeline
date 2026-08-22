@@ -28,7 +28,7 @@ helper.py ◄──── data.py ◄──── llm.py
 | 重试接入（对接 M2 `retry_scraping` 通用装饰器） | 框架 `SpiderBase` |
 | HTTP 爬虫（httpx 实现） | 框架 `HttpSpider` |
 | 浏览器爬虫（Playwright CDP 实现） | 框架 `CDPSpider` |
-| URL 构造、响应解析、字段提取 | **用户项目**（PH 解析逻辑留 product_hunt） |
+| URL 构造、响应解析、字段提取 | **用户项目**（业务解析逻辑留 示例业务项目） |
 
 ### 2.2 接口草案
 
@@ -47,10 +47,10 @@ class HttpSpider(SpiderBase[Item]):
     """httpx 异步实现"""
 
 class CDPSpider(SpiderBase[Item]):
-    """Playwright CDP 实现，复用 product_hunt 的浏览器会话管理"""
+    """Playwright CDP 实现，复用 示例业务项目 的浏览器会话管理"""
 ```
 
-- PH 侧（M7）：`class PHSpider(HttpSpider[Post])`，`parse()` 中保留 PH 专属解析与 403 处理注入。
+- 业务侧（M7）：`class DemoSpider(HttpSpider[DemoItem])`，`parse()` 中保留 业务专属解析与 403 处理注入。
 - CDP 浏览器会话管理（原 `src/setup.py` 的启动逻辑）随 `CDPSpider` 进入框架，做成可关闭的可选依赖（`prefect_pipeline[cdp]` extra）。
 
 ## 3. 其余组件迁移要点
@@ -63,7 +63,7 @@ class CDPSpider(SpiderBase[Item]):
 ### 3.2 llm.py
 - `LLMExtractionStrategy`（单次）/ `BatchLLMExtractionStrategy`（批量）依赖 `CompletionConfig`（M2 已就位），零预置实例，model 由用户注入。
 - `GenericExtractor`: `schema_model` + `ns` + `version` 三要素接口不变，作为用户继承的主要扩展点。
-- `PostExtractor`（含 `https://ph.com/{slug}` 硬编码）移出。
+- `DemoItemExtractor`（含 `https://example.com/{slug}` 硬编码）移出。
 
 ### 3.3 batch.py
 - litellm batch 生命周期：提交 → 轮询 → 拉取结果 → 解析入库。
@@ -84,6 +84,6 @@ class CDPSpider(SpiderBase[Item]):
 
 | 风险 | 缓解 |
 | --- | --- |
-| spider 泛化时破坏 PH 爬虫行为 | M7 回归重点项；SpiderBase 保持窄接口，PH 逻辑全在子类 |
+| spider 泛化时破坏 业务 爬虫行为 | M7 回归重点项；SpiderBase 保持窄接口，业务 逻辑全在子类 |
 | fastembed 模型下载拖慢 CI | EmbeddingModel 真实加载标记 `slow`，CI 默认跳过 |
 | Playwright 为重量级可选依赖 | 通过 extra `prefect_pipeline[cdp]` 隔离，未安装时 import 报错信息友好 |

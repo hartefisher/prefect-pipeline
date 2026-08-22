@@ -19,8 +19,8 @@
 | `src/loader.py` | `src/core/loader.py` | 无（FlowsLoader + EntryPoints + 代码生成） |
 | `src/lib/condition.py` | `src/core/condition.py` | 无（ALL/ANY 策略） |
 | `src/lib/ns_converter.py` | `src/core/ns_converter.py` | 无 |
-| `src/lib/configs.py` | `src/core/configs.py` | **泛化**：移除 `MACRO_VARIABLES = {"ph": [...]}` 预置与 `PH_API_URL`/`PH_DEV_TOKEN` 等 PH 专属环境变量 |
-| `src/main.py` | `src/main.py` | **泛化**：入口仅做 FlowsLoader.load() + prefect.aserve，无 PH 启动逻辑 |
+| `src/lib/configs.py` | `src/core/configs.py` | **泛化**：移除 `MACRO_VARIABLES = {"demo": [...]}` 预置与 `EXAMPLE_API_URL`/`EXAMPLE_DEV_TOKEN` 等 业务专属环境变量 |
+| `src/main.py` | `src/main.py` | **泛化**：入口仅做 FlowsLoader.load() + prefect.aserve，无 业务 启动逻辑 |
 
 ## 3. 功能点（全部挂 Issue）
 
@@ -31,7 +31,7 @@
 | 3.3 | 迁移 `core/runner_base.py`（Hook 系统 + trigger 触发器） | feature |
 | 3.4 | 迁移 `core/loader.py`（FlowsLoader + EntryPoints + 代码生成） | feature |
 | 3.5 | 迁移 `core/condition.py` + `core/ns_converter.py` | feature |
-| 3.6 | 泛化 `core/configs.py` + `main.py`（去 PH 配置） | feature |
+| 3.6 | 泛化 `core/configs.py` + `main.py`（去 业务 配置） | feature |
 | 3.7 | M3 单元测试：DAG 运算符语义、Condition 策略、ns_converter、Hook 注册 | testing |
 
 ## 4. 确认点（挂 Issue，标签 `confirmation`）
@@ -42,6 +42,6 @@
 
 ## 5. 验收标准
 
-- DAG 三种组合（`A>>B`、`A+B`、`A>>(B+C)>>D`）的 node_map/上下游关系与 product_hunt 行为一致（单元测试断言）
-- `MACRO_VARIABLES` 由用户项目注入，框架无 `"ph"` 预置
+- DAG 三种组合（`A>>B`、`A+B`、`A>>(B+C)>>D`）的 node_map/上下游关系与 示例业务项目 行为一致（单元测试断言）
+- `MACRO_VARIABLES` 由用户项目注入，框架无业务前缀预置
 - `pytest tests/unit/core` 全绿；`mypy src/core` 零报错

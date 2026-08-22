@@ -11,9 +11,9 @@
 
 ## 2. 迁移范围
 
-| 原类 (product_hunt) | 框架类 | 改造点 |
+| 原类 (示例业务项目) | 框架类 | 改造点 |
 | --- | --- | --- |
-| `ProductHuntFlow` | `PipelineFlow` (`runners/base.py`) | 重命名；`project_name` 由子类设置；时区 `US/Pacific` → 可配置，默认 UTC |
+| `DemoFlow` | `PipelineFlow` (`runners/base.py`) | 重命名；`project_name` 由子类设置；时区 `Asia/Shanghai` → 可配置，默认 UTC |
 | `TransformationFlow` | `runners/transformation.py` | 同名迁移 |
 | `ReasoningFlow` | `runners/reasoning.py` | 同名迁移（实时/批量双模式） |
 | `EmbeddingFlow` | `runners/embedding.py` | 同名迁移 |
@@ -38,6 +38,6 @@
 ## 5. 验收标准
 
 - `from prefect_pipeline import Deployment, FlowRunnerBase, PipelineFlow, ...` 按总纲 §8.1 清单全部可用
-- `grep -rn "US/Pacific" src/` 无输出（时区已参数化）
+- `grep -rn "Asia/Shanghai" src/` 无输出（时区已参数化）
 - `pytest tests/unit/runners` 全绿
 - 一个 toy Flow 能 `deploy()` 注册并通过 `prefect.aserve()` 启动（冒烟验证）

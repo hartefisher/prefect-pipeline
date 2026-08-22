@@ -27,11 +27,11 @@ src/core/
 
 ## 3. configs.py 泛化设计
 
-### 迁移前（product_hunt）
+### 迁移前（示例业务项目）
 
 ```python
-MACRO_VARIABLES = {"ph": [...]}          # PH 预置
-PH_API_URL = os.getenv("PH_API_URL")     # PH 专属
+MACRO_VARIABLES = {"demo": [...]}          # 业务 预置
+EXAMPLE_API_URL = os.getenv("EXAMPLE_API_URL")     # 业务专属
 ```
 
 ### 迁移后（框架）
@@ -41,10 +41,10 @@ PH_API_URL = os.getenv("PH_API_URL")     # PH 专属
 MACRO_VARIABLES: dict[str, list] = {}    # 用户项目启动时注入
 
 def register_macro_variables(project: str, variables: list[str]) -> None:
-    """用户项目注册自己的宏变量（product_hunt 在 main.py 中调用 register_macro_variables("ph", [...]))"""
+    """用户项目注册自己的宏变量（示例业务项目 在 main.py 中调用 register_macro_variables("demo", [...]))"""
 ```
 
-- PH 专属环境变量（`PH_API_URL`、`PH_DEV_TOKEN` 等）整体移除，留在 product_hunt 的配置模块。
+- 业务专属环境变量（`EXAMPLE_API_URL`、`EXAMPLE_DEV_TOKEN` 等）整体移除，留在 示例业务项目 的配置模块。
 - 框架保留的环境变量：`ENVIRONMENT`、`FLOWS_DIRECTORY`、`PROMPTS_DIRECTORY`、`WORKFLOW_POOL`。
 
 ## 4. trigger() 依赖关系

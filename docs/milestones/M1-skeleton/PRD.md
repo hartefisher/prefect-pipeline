@@ -14,7 +14,7 @@
 | # | 功能点 | 说明 | Issue |
 | --- | --- | --- | --- |
 | 1.1 | 目录结构创建 | `src/{core,components,runners,infra,models}` 分层目录 | ✅ 已完成 |
-| 1.2 | `.gitignore` 更新 | 排除 `product_hunt/`、`.env`、`src/generated/` | ✅ 已完成 |
+| 1.2 | `.gitignore` 更新 | 排除 `示例业务项目/`、`.env`、`src/generated/` | ✅ 已完成 |
 | 1.3 | PRD 总纲 | v0.2，Q1-Q5 决策落定 | ✅ 已完成 |
 | 1.4 | README.md 初版 | 英文，架构图 + DAG 用法示例 | ✅ 已完成 |
 | 1.5 | `pyproject.toml` 初始化 | 包定义、依赖清单（含 dev 依赖组）、构建后端 (hatchling)、Python >=3.12 | ✅ #6 |

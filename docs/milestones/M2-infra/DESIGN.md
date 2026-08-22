@@ -14,7 +14,7 @@ src/models/
 ```
 
 - **BaseItem**: 泛型 Item 基类，`DataFetcher[Item]`、`LLMExtractor[Item]` 等泛型注入的目标类型。迁移时保持 pydantic v2 模型签名不变。
-- **DeploymentContext**: trigger() 的上下文载体（下游节点 + peer 信息），字段与 product_hunt 现状保持一致，M3 编排层直接复用。
+- **DeploymentContext**: trigger() 的上下文载体（下游节点 + peer 信息），字段与 示例业务项目 现状保持一致，M3 编排层直接复用。
 - **CompletionConfig**: LLM 推理配置（model、temperature、max_tokens、batch 支持）。框架只提供"配置形状"，不提供实例——用户项目自行声明 model 实例并注入 `LLMExtractionStrategy`。
 
 ### 1.2 infra 包
@@ -32,7 +32,7 @@ src/infra/
 
 ### 2.1 retry_scraping 通用化（Q2-B 落地）
 
-原 `retry_scraping` 混合了通用 HTTP 重试与 PH 403 反爬处理。拆分方案：
+原 `retry_scraping` 混合了通用 HTTP 重试与 业务专属 403 反爬处理。拆分方案：
 
 ```python
 # 框架层：通用重试装饰器（状态码分类 + 指数退避）
@@ -43,19 +43,19 @@ def retry_scraping(
     on_give_up: Callable | None = None,   # 放弃回调（可注入站点特殊处理）
 ): ...
 
-# product_hunt 适配层（M7）：子类/回调注入 PH 403 特殊逻辑
-ph_retry = retry_scraping(
+# 示例业务项目 适配层（M7）：子类/回调注入 业务专属 403 特殊逻辑
+biz_retry = retry_scraping(
     403, 429,
-    on_give_up=ph_authorization_refresh,   # PH token 刷新
+    on_give_up=biz_authorization_refresh,   # 业务 token 刷新
 )
 ```
 
-- `handle_authorization()`（PH GraphQL 逻辑）整体移出框架，留在 product_hunt。
+- `handle_authorization()`（源项目 API 鉴权 逻辑）整体移出框架，留在 示例业务项目。
 - 状态码 → 异常分类的映射表保留在框架（可重试 vs 不可重试）。
 
 ### 2.2 db.py 泛化
 
-- 移除全部 `ph_posts_*` collection 常量（30+ 个）。
+- 移除全部 `biz_posts_*` collection 常量（30+ 个）。
 - 保留：`MongoDB` 类（motor 异步客户端封装、连接生命周期、`WORKFLOW_DB` 环境变量默认值机制）。
 - 用户项目通过 `DB = MongoDB(); coll = DB.my_collection` 直接属性访问，无需框架预置常量。
 - 多实例连接管理为确认点 C2.1，默认本期不做。
@@ -85,5 +85,5 @@ ph_retry = retry_scraping(
 
 | 风险 | 缓解 |
 | --- | --- |
-| `models/__init__.py` 中 PH 模型与通用模型存在交叉 import | 迁移时逐个检查 `BaseItem` 等通用模型的字段是否引用 PH 类型 |
-| 重试装饰器签名变化影响 product_hunt 调用方 | M7 提供适配层；框架保留原函数名 `retry_scraping` |
+| `models/__init__.py` 中 业务 模型与通用模型存在交叉 import | 迁移时逐个检查 `BaseItem` 等通用模型的字段是否引用 业务类型 |
+| 重试装饰器签名变化影响 示例业务项目 调用方 | M7 提供适配层；框架保留原函数名 `retry_scraping` |
