@@ -1,9 +1,10 @@
-# Prefect Pipeline Framework — PRD 草稿
+# Prefect Pipeline Framework — PRD
 
-> **版本**: v0.1 (Draft)  
+> **版本**: v0.2  
 > **日期**: 2026-08-22  
-> **状态**: 待评审  
-> **作者**: —
+> **状态**: 已确认（Q1-Q5 开放问题已全部决策，见 §13.3）  
+> **作者**: —  
+> **里程碑分册**: [docs/milestones/](./milestones/) — 每个里程碑有独立 PRD + 设计文档，功能点全部挂 GitHub Issue
 
 ---
 
@@ -32,6 +33,7 @@
 | G3 | 框架可独立安装 (`pip install`)，作为 product_hunt 的依赖项 | `pyproject.toml` 完整，import 路径无业务前缀 |
 | G4 | 提供清晰的公共 API 和扩展点                             | 核心接口有类型标注 + docstring + 示例         |
 | G5 | 推送到 GitHub 公开仓库                              | 仓库可 clone、README 可引导快速开始           |
+| G6 | 提供框架级测试套件：单元测试随代码迁移交付，集成/回归测试专项建设 | pytest 全绿；core 层覆盖率 ≥85%；DAG 语义回归通过 |
 
 ### 2.2 非目标
 
@@ -39,7 +41,8 @@
 - **不**替换 Prefect 为其他编排引擎
 - **不**替换 litellm / motor / qdrant_client 为其他库
 - **不**在本期实现 Web UI 或可视化看板
-- **不**在本期实现框架级测试套件（先保证可运行性，测试为后续里程碑）
+- **不**提供 Dockerfile 模板（Q4 已决策：暂不提供，用户项目自行编写）
+- **不**预置任何 LLM model 实例配置（Q3 已决策：框架零预置，仅保留 `CompletionConfig` 配置模型）
 
 ---
 
@@ -458,6 +461,10 @@ DEEPSEEK_API_KEY=...
 | 环境管理       | python-dotenv | >=1.0          | .env 加载            |
 | 时区处理       | pytz          | >=2024.1       | 时区转换               |
 | HTTP 客户端   | httpx         | >=0.27         | 异步 HTTP (爬虫)       |
+| 测试框架       | pytest        | >=8.0          | 单元/集成测试            |
+| 异步测试       | pytest-asyncio | >=0.23        | async 测试支持         |
+| 覆盖率        | pytest-cov    | >=5.0          | 覆盖率统计与门槛          |
+| Mock        | pytest-mock / unittest.mock | —      | 外部服务 fake（Mongo/Qdrant/LLM） |
 
 ### 9.1 Python 版本
 
@@ -480,45 +487,44 @@ DEEPSEEK_API_KEY=...
 
 ## 11. 里程碑计划
 
-### M1: 框架骨架搭建 (当前)
+> 完整的需求拆分与设计见 [docs/milestones/](./milestones/) 分册；所有功能点/确认点均已挂 GitHub Issue，以 GitHub Milestone `M1`~`M8` 跟踪。
+
+### 总览
+
+| 里程碑 | 名称 | 交付物 | 状态 |
+| --- | --- | --- | --- |
+| [M1](./milestones/M1-skeleton/) | 框架骨架与工程基线 | 目录结构、pyproject.toml、lint/CI 基线 | 进行中 |
+| [M2](./milestones/M2-infra/) | 基础设施层迁移 | models + infra（db/exceptions/error_handlers/utils/types）+ 单元测试 | 未开始 |
+| [M3](./milestones/M3-core/) | 编排核心层迁移 | core（deployment/orchestration/runner_base/loader/condition/ns_converter/configs）+ 单元测试 | 未开始 |
+| [M4](./milestones/M4-components/) | 组件层迁移 | components（data/llm/vector/helper/batch/spider）+ 单元测试 | 未开始 |
+| [M5](./milestones/M5-runners-api/) | Runner 类型层与公共 API | runners/ 子包 + 顶层导出 + 单元测试 | 未开始 |
+| [M6](./milestones/M6-testing/) | 框架级测试套件 | 测试基础设施（fakes）、DAG 语义回归、E2E 集成测试、覆盖率门槛 | 未开始 |
+| [M7](./milestones/M7-ph-migration/) | product_hunt 适配与回归 | PH 依赖切换 + 业务适配层 + 回归验证 | 未开始 |
+| [M8](./milestones/M8-release/) | 示例、文档与开源发布 | examples、architecture.md、LICENSE/CONTRIBUTING、敏感信息审查 | 未开始 |
+
+### 依赖关系
+
+```
+M1 ──► M2 ──► M3 ──► M5 ──► M7 ──► M8
+        │       │              
+        └──► M4 ┘   M4 ──► M5
+   (M6 的测试基础设施在 M2 起持续交付，M6 专项收口集成与回归测试)
+```
+
+- M2（基础设施层）是所有上层迁移的前置
+- M3（编排核心）与 M4（组件）在 M2 完成后可并行
+- M5 依赖 M3 + M4；M7 依赖 M5 + M6（回归测试需先就绪）
+- 每个 M2~M5 里程碑的功能 Issue 均附带对应单元测试交付（测试与代码同 PR）
+
+### M1: 框架骨架与工程基线 (当前)
 
 - [x] 创建 `prefect_pipeline/` 目录结构
 - [x] 更新 `.gitignore`，排除 `product_hunt/`
-- [ ] 编写 PRD 草稿 (本文档)
+- [x] 编写 PRD (本文档)
+- [x] 初始化 `README.md`
 - [ ] 初始化 `pyproject.toml`
-- [ ] 初始化 `README.md`
-
-### M2: 核心代码迁移
-
-- [ ] 迁移编排层 (`orchestration.py`, `deployment.py`, `runner_base.py`, `loader.py`, `condition.py`, `ns_converter.py`)
-- [ ] 迁移组件层 (`data.py`, `llm.py`, `vector.py`, `helper.py`) — 移除 PH 业务类
-- [ ] 迁移基础设施层 (`db.py`, `exceptions.py`, `error_handlers.py`, `utils.py`, `types.py`)
-- [ ] 迁移数据模型 (`models/__init__.py`, `models/llm.py`) — 移除 PH 业务模型
-- [ ] 泛化 Runner 类型 (`runners.py` → `runners/` 子包) — 重命名 `ProductHuntFlow` → `PipelineFlow`
-- [ ] 调整所有 import 路径
-
-### M3: product_hunt 适配
-
-- [ ] product_hunt `pyproject.toml` 添加 `prefect_pipeline` 依赖
-- [ ] product_hunt 所有 import 从 `..lib.*` 改为 `prefect_pipeline.*`
-- [ ] product_hunt 保留的业务类 (`PostExtractor`, `StandardizationRelativesTransformer` 等) 继承框架基类
-- [ ] PH 专属配置 (LLM model 实例、collection 常量) 保留在 product_hunt 内
-- [ ] 回归测试：PH 流水线行为不变
-
-### M4: GitHub 准备
-
-- [ ] README.md (快速开始 + 架构图 + 示例)
-- [ ] LICENSE (MIT)
-- [ ] CONTRIBUTING.md
-- [ ] 清理框架内敏感信息 (API key, 私有 host)
-- [ ] 推送到 GitHub
-
-### M5: 示例与文档
-
-- [ ] `examples/simple_pipeline.py` — 最简流水线
-- [ ] `examples/llm_extraction.py` — LLM 提取示例
-- [ ] `examples/batch_inference.py` — 批量推理示例
-- [ ] `docs/architecture.md` — 架构详解
+- [ ] 配置 ruff + mypy 工程化基线
+- [ ] GitHub Actions lint workflow
 
 ---
 
@@ -565,15 +571,17 @@ DEEPSEEK_API_KEY=...
 - **Hook 系统不可变**: `@Hook.on(event=...)` 装饰器机制保持原样
 - **泛型 Item 注入不可变**: `DataFetcher[Item]`、`LLMExtractor[Item]` 等泛型签名保持原样
 
-### 13.3 开放问题
+### 13.3 开放问题（已全部决策 ✅ 2026-08-22）
 
-| #  | 问题                                                                                 | 当前状态                                       |
-| -- | ---------------------------------------------------------------------------------- | ------------------------------------------ |
-| Q1 | 框架名称 `prefect_pipeline` 是否合适？                                                      | 待用户确认                                      |
-| Q2 | 是否将 `error_handlers.py` 中的 `retry_scraping` 完全移到 product_hunt？还是保留通用重试框架 + PH 适配层？ | 倾向后者                                       |
-| Q3 | `models/llm.py` 中的 ~50 个 LLM model 实例是否提供框架级默认配置？                                  | 倾向不提供，由用户项目自行配置                            |
-| Q4 | 框架是否需要提供 Dockerfile 模板？                                                            | 可选，M5 再定                                   |
-| Q5 | `WebScrapingFlow` 中的 `Spider` / `CDPSpider` 组件是否纳入框架？                              | 倾向纳入通用 `SpiderBase`，PH 专属实现留在 product_hunt |
+| #   | 问题                                                 | 决策                                                                 |
+| ---- | -------------------------------------------------- | ------------------------------------------------------------------ |
+| Q1  | 框架名称 `prefect_pipeline` 是否合适？                      | ✅ **保持 `prefect_pipeline`**（Issue #1）                             |
+| Q2  | `retry_scraping` 完全移到 product_hunt，还是保留通用重试框架 + PH 适配层？ | ✅ **方案 B：通用重试框架 + PH 适配层**——框架保留通用 retry 装饰器（状态码分类、指数退避），PH 403 特殊处理通过参数/子类注入（Issue #3） |
+| Q3  | `models/llm.py` 中的 ~50 个 LLM model 实例是否提供框架级默认配置？   | ✅ **方案 A：框架零预置**——仅保留 `CompletionConfig` 配置模型，所有实例由用户项目自定义（Issue #2） |
+| Q4  | 框架是否需要提供 Dockerfile 模板？                            | ✅ **暂不提供**（Issue #4）                                               |
+| Q5  | `Spider` / `CDPSpider` 组件是否纳入框架？                    | ✅ **方案 A：纳入框架**——提供通用 `SpiderBase`（请求调度、并发控制、重试接入），PH 专属解析逻辑留在 product_hunt（Issue #5） |
+
+> 迁移过程中新产生的确认点以 `confirmation` 标签的 Issue 跟踪，决策后更新本表。
 
 ---
 
@@ -587,6 +595,8 @@ DEEPSEEK_API_KEY=...
 | AC4 | 框架推送到 GitHub 后可 clone            | `git clone <github_url>` 成功                                                |
 | AC5 | 框架无敏感信息                          | `grep -ri "api_key\|password\|secret" prefect_pipeline/src/` 仅匹配变量名定义，无实际值 |
 | AC6 | DAG 运算符语义不变                      | 迁移后 PH 流水线的 `orchestrations.py` 不需修改即可运行                                   |
+| AC7 | 测试套件全绿且达标                       | `pytest` 全部通过；`src/core/` 覆盖率 ≥85%，全包 ≥75%                                |
+| AC8 | DAG 语义回归通过                       | M6 的 DAG 语义回归测试（序列/并行/混合/peer 检查）全部通过                                  |
 
 ---
 
@@ -606,7 +616,7 @@ product_hunt/src/lib/components/data.py     → prefect_pipeline/src/components/
 product_hunt/src/lib/components/llm.py      → prefect_pipeline/src/components/llm.py (移除 PostExtractor)
 product_hunt/src/lib/components/vector.py   → prefect_pipeline/src/components/vector.py
 product_hunt/src/lib/components/helper.py   → prefect_pipeline/src/components/helper.py
-product_hunt/src/lib/components/spider.py   → prefect_pipeline/src/components/spider.py (待定, Q5)
+product_hunt/src/lib/components/spider.py   → prefect_pipeline/src/components/spider.py (Q5 已决策纳入, 提供 SpiderBase)
 product_hunt/src/lib/components/batch.py    → prefect_pipeline/src/components/batch.py
 
 product_hunt/src/lib/runners.py             → prefect_pipeline/src/runners/ (拆分为子包, 泛化)
