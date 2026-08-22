@@ -1,6 +1,6 @@
 # M1 — 框架骨架与工程基线（PRD）
 
-> **状态**: 进行中（大部分已完成）
+> **状态**: ✅ 已完成（2026-08-22，commit 971262e）
 > **前置**: 无
 > **GitHub Milestone**: `M1`
 > **总纲**: [../PRD.md](../PRD.md)
@@ -17,9 +17,9 @@
 | 1.2 | `.gitignore` 更新 | 排除 `product_hunt/`、`.env`、`src/generated/` | ✅ 已完成 |
 | 1.3 | PRD 总纲 | v0.2，Q1-Q5 决策落定 | ✅ 已完成 |
 | 1.4 | README.md 初版 | 英文，架构图 + DAG 用法示例 | ✅ 已完成 |
-| 1.5 | `pyproject.toml` 初始化 | 包定义、依赖清单（含 dev 依赖组）、构建后端 (hatchling)、Python >=3.12 | ⬜ Issue |
-| 1.6 | ruff + mypy 工程化基线 | lint 规则、类型检查配置、`py.typed` 标记 | ⬜ Issue |
-| 1.7 | GitHub Actions lint workflow | push/PR 触发 ruff + mypy | ⬜ Issue |
+| 1.5 | `pyproject.toml` 初始化 | 包定义、依赖清单（含 dev 依赖组）、构建后端 (hatchling)、Python >=3.12 | ✅ #6 |
+| 1.6 | ruff + mypy 工程化基线 | lint 规则、类型检查配置、`py.typed` 标记 | ✅ #7 |
+| 1.7 | GitHub Actions lint workflow | push/PR 触发 ruff + mypy | ✅ #8 |
 
 ## 3. 验收标准
 
