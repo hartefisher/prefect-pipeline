@@ -94,6 +94,7 @@ from .models.llm import (
 # ----------------------------------------------------------------------
 from .runners import (
     AggregationFlow,
+    DeploymentContextManager,
     EmbeddingFlow,
     OverallAggregationFlow,
     OverallEmbeddingFlow,
@@ -131,6 +132,7 @@ __all__ = [
     "DataTransformer",
     "Deployment",
     "DeploymentContext",
+    "DeploymentContextManager",
     "DockerSpider",
     "EmbeddingFlow",
     "EmbeddingHandler",

@@ -3,6 +3,7 @@ from prefect_pipeline.runners.aggregation import (
     OverallAggregationFlow,
 )
 from prefect_pipeline.runners.base import PipelineFlow, Retry
+from prefect_pipeline.runners.context import DeploymentContextManager
 from prefect_pipeline.runners.embedding import (
     EmbeddingFlow,
     OverallEmbeddingFlow,
@@ -22,6 +23,7 @@ from prefect_pipeline.runners.transformation import (
 
 __all__ = [
     "AggregationFlow",
+    "DeploymentContextManager",
     "EmbeddingFlow",
     "OverallAggregationFlow",
     "OverallEmbeddingFlow",
