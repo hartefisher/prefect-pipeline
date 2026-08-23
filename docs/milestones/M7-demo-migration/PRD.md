@@ -1,6 +1,6 @@
 # M7 — 示例业务项目适配与回归（PRD + 设计）
 
-> **状态**: 未开始
+> **状态**: ✅ 已完成（2026-08-23，AC3 待真实业务环境跑通）
 > **前置**: M5 + M6
 > **GitHub Milestone**: `M7`
 > **总纲**: [../PRD.md](../PRD.md)
@@ -11,12 +11,12 @@
 
 ## 2. 功能点（全部挂 Issue）
 
-| # | 功能点 | 标签 |
-| --- | --- | --- |
-| 7.1 | 业务 `pyproject.toml` 添加 `prefect_pipeline` 依赖；全部 import 从 `..lib.*` 改为 `prefect_pipeline.*` | feature |
-| 7.2 | 业务适配层：`DemoItemExtractor`、`Demo*Transformer`、业务专属 403 retry 适配、`handle_authorization`、`DemoSpider(HttpSpider[DemoItem])`、LLM model 实例配置、collection 常量——继承/注入框架基类 | feature |
-| 7.3 | 业务 回归验证：流水线行为不变（AC3：`python -m src.main` 正常启动；AC6：`orchestrations.py` 零修改运行；时区行为比对） | testing |
-| 7.4 | 消灭 `generated/deployments.py`：`version_id` 回归 env，部署清单物化到 MongoDB（替代框架包内生成文件） | feature |
+| # | 功能点 | 标签 | 状态 |
+| --- | --- | --- | --- |
+| 7.1 | 业务 `pyproject.toml` 添加 `prefect_pipeline` 依赖；全部 import 从 `..lib.*` 改为 `prefect_pipeline.*` | feature | ✅ 完成 |
+| 7.2 | 业务适配层：`DemoItemExtractor`、`Demo*Transformer`、业务专属 403 retry 适配、`handle_authorization`、`DemoSpider(HttpSpider[DemoItem])`、LLM model 实例配置、collection 常量——继承/注入框架基类 | feature | ✅ 完成 |
+| 7.3 | 业务 回归验证：流水线行为不变（AC3：`python -m src.main` 正常启动；AC6：`orchestrations.py` 零修改运行；时区行为比对） | testing | ✅ 完成（AC6/时区/import 已验证；AC3 待真实环境） |
+| 7.4 | 消灭 `generated/deployments.py`：`version_id` 回归 env，部署清单物化到 MongoDB（替代框架包内生成文件） | feature | ✅ 完成 |
 
 ## 3. 设计要点
 
