@@ -28,6 +28,18 @@ TIMEZONE = os.getenv("TIMEZONE", "UTC")
 # 框架不预置任何业务前缀（原示例业务项目的 "demo" / "ph" 等前缀已全部移除）。
 MACRO_VARIABLES: dict[str, list[str]] = {}
 
+# 增量转换开关：业务项目可覆盖。为 "false" 时，DataTransformer.setup 会先清空
+# 目标集合再写入（全量刷新语义）；默认 "true"（增量 upsert 语义）。
+INCREMENTAL_TRANSFORMATION = os.getenv("INCREMENTAL_TRANSFORMATION", "true")
+
+# 批量推理 provider 凭证（框架仅读取，不预置任何值；业务项目在自己的环境中声明）。
+# 当前内置 BatchReasoningJob（OpenAI 兼容 / 百炼）与 ArkBatchReasoningJob（火山方舟）两类实现，
+# C4.1 决策前保持 litellm 直连，未来可抽象为 BatchProvider 协议。
+BAILIAN_API_KEY = os.environ.get("BAILIAN_API_KEY")
+BAILIAN_BASE_URL = os.environ.get("BAILIAN_BASE_URL")
+VOLC_ACCESSKEY = os.environ.get("VOLC_ACCESSKEY", "")
+VOLC_SECRETKEY = os.environ.get("VOLC_SECRETKEY", "")
+
 
 def register_macro_variables(project: str, variables: list[str]) -> None:
     """业务项目注册自己的宏变量。

@@ -1,6 +1,6 @@
 # M4 — 组件层迁移（PRD）
 
-> **状态**: 未开始
+> **状态**: 已完成
 > **前置**: M2（与 M3 可并行）
 > **GitHub Milestone**: `M4`
 > **总纲**: [../PRD.md](../PRD.md) · **设计**: [DESIGN.md](./DESIGN.md)
