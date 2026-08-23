@@ -1,6 +1,6 @@
 # M5 — Runner 类型层与公共 API（PRD）
 
-> **状态**: 未开始
+> **状态**: 已完成
 > **前置**: M3 + M4
 > **GitHub Milestone**: `M5`
 > **总纲**: [../PRD.md](../PRD.md) · **设计**: [DESIGN.md](./DESIGN.md)

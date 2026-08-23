@@ -161,3 +161,52 @@ class CompletionConfig(BaseModel):
         if s := re.search(r"-([\d]{6,}$)", self.model):
             return s.groups()[0]
         return None
+
+    @computed_field
+    @property
+    def batch_config(self) -> dict[str, Any]:
+        """Provider-agnostic batch-inference parameter subset.
+
+        Returned verbatim to a :class:`BatchReasoningJob` so the framework does
+        not hardcode any provider-specific request shape. Concrete provider
+        configs may override to add provider-only fields.
+        """
+        return {
+            **self.model_dump(
+                include={
+                    "reasoning_effort",
+                    "thinking",
+                    "enable_thinking",
+                    "temperature",
+                    "top_p",
+                    "max_tokens",
+                },
+                exclude_none=True,
+            ),
+            **(self.extra_body or {}),
+        }
+
+
+# ----------------------------------------------------------------------
+# Provider registry (C5.1): user projects register their CompletionConfig
+# subclasses here so ReasoningFlow.get_llm_config can resolve a provider name
+# (stored in the MongoDB `extractors`/`llm_configs` collections) into a class
+# without the framework importing any business-specific module.
+# ----------------------------------------------------------------------
+
+_LLM_PROVIDER_REGISTRY: dict[str, type[CompletionConfig]] = {}
+
+
+def register_llm_provider(name: str, cls: type[CompletionConfig]) -> None:
+    """Register a :class:`CompletionConfig` subclass under ``name``.
+
+    User projects call this once at import time (e.g. ``register_llm_provider("ark", Ark)``)
+    so the framework's DB-backed LLM config resolution can instantiate the
+    correct provider without a hardcoded import path.
+    """
+    _LLM_PROVIDER_REGISTRY[name] = cls
+
+
+def get_llm_provider(name: str) -> type[CompletionConfig] | None:
+    """Return the registered provider class for ``name``, or ``None``."""
+    return _LLM_PROVIDER_REGISTRY.get(name)
