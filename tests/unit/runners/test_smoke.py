@@ -1,11 +1,12 @@
 """Smoke test: toy Flow deploys and its deployment parameters assemble (M5.3)."""
+
 from __future__ import annotations
 
 import pytest
-from tests.unit.runners.conftest import ToyDataTransformer
 
 from prefect_pipeline import Deployment, TransformationFlow
 from prefect_pipeline.core.deployment import Node
+from tests.unit.runners.conftest import ToyDataTransformer
 
 
 def test_toy_flow_deploy_and_parameters():

@@ -1,11 +1,11 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from tests.unit.components.conftest import ToyItem
 
 from prefect_pipeline.components.spider import HTTPSpider, SpiderBase
 from prefect_pipeline.infra.exceptions import ResultIsEmpty
 from prefect_pipeline.infra.utils import TimeStatistic
+from tests.unit.components.conftest import ToyItem
 
 
 class _FakeCrawlResult:
@@ -52,9 +52,7 @@ def test_spider_base_check_result_raises_on_empty():
 
 def test_spider_base_check_result_marks_failure_on_cloudflare():
     spider = ToySpider()
-    result = _FakeCrawlResult(
-        cleaned_html='<html><body><a href="https://cloudflare.com/x">x</a></body></html>'
-    )
+    result = _FakeCrawlResult(cleaned_html='<html><body><a href="https://cloudflare.com/x">x</a></body></html>')
     spider.check_result(ToyItem(url="u"), result)
     assert result.success is False
 

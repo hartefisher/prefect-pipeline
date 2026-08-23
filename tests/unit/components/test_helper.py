@@ -1,7 +1,5 @@
 from unittest.mock import AsyncMock, MagicMock
 
-from tests.unit.components.conftest import ToyItem
-
 from prefect_pipeline.components.helper import (
     AutoItemModel,
     IdSet,
@@ -11,6 +9,7 @@ from prefect_pipeline.components.helper import (
     bulk_write,
 )
 from prefect_pipeline.models import BaseItem
+from tests.unit.components.conftest import ToyItem
 
 
 def test_url_set_filter_and_update():

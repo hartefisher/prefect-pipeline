@@ -102,9 +102,7 @@ class Deployment:
 
     def get_deployment_name(self) -> str:
         if self.name is None:
-            raise ValueError(
-                "Deployment name must be set before setting deployment parameters."
-            )
+            raise ValueError("Deployment name must be set before setting deployment parameters.")
 
         flags = ["Test"] if IS_TEST else []
         if self.node and self.node.runner:

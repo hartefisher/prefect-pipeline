@@ -1,4 +1,5 @@
 """Tests for prefect_pipeline.core.ns_converter."""
+
 from __future__ import annotations
 
 from prefect_pipeline.core.configs import ROOT_PATH
@@ -13,6 +14,7 @@ from prefect_pipeline.core.ns_converter import (
 # --------------------------------------------------------------------------- #
 # gen_deployment_name
 # --------------------------------------------------------------------------- #
+
 
 def test_gen_deployment_name_simple():
     assert gen_deployment_name("TestFlow") == "Test Flow"
@@ -39,6 +41,7 @@ def test_gen_deployment_name_camel_case():
 # path_2_flow_name
 # --------------------------------------------------------------------------- #
 
+
 def test_path_2_flow_name_with_prefix():
     full_path = f"{ROOT_PATH}.spider.test"
     result = path_2_flow_name(full_path, "demo")
@@ -54,6 +57,7 @@ def test_path_2_flow_name_without_prefix():
 # --------------------------------------------------------------------------- #
 # ns_2_entrypoint / entrypoint_2_ns round-trip
 # --------------------------------------------------------------------------- #
+
 
 def test_ns_2_entrypoint_basic():
     result = ns_2_entrypoint("demo-spider-test", "DailyRun")
@@ -79,6 +83,7 @@ def test_entrypoint_round_trip():
 # capitalize_ns
 # --------------------------------------------------------------------------- #
 
+
 def test_capitalize_ns_camel_case():
     result = capitalize_ns("spiderFlow")
     assert result == ["spider", "Flow"]
@@ -97,3 +102,15 @@ def test_capitalize_ns_empty():
 def test_capitalize_ns_with_digits():
     result = capitalize_ns("Flow2Runner")
     assert result == ["Flow2", "Runner"]
+
+
+def test_capitalize_ns_with_underscore_delimiter():
+    # No camelCase segments and no uppercase -> delimiter branch (line 33).
+    # split('.') yields a single segment, capitalized as one phrase.
+    result = capitalize_ns("spider_flow")
+    assert result == ["Spider Flow"]
+
+
+def test_capitalize_ns_with_dot_delimiter():
+    result = capitalize_ns("spider.flow.runner")
+    assert result == ["Spider", "Flow", "Runner"]

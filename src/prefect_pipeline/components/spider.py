@@ -126,9 +126,7 @@ class CrawlerRunConfigDict(TypedDict, total=False):
     experimental: dict[str, Any] | None
 
 
-class SpiderBase[Item: BaseItem](
-    AutoItemModel[Item], PipelineHelper, ExtraContextMixin
-):
+class SpiderBase[Item: BaseItem](AutoItemModel[Item], PipelineHelper, ExtraContextMixin):
     data_dir: str = "default"
     custom_browser_config: BrowserConfigDict = {}  # noqa: RUF012
     custom_run_config: CrawlerRunConfigDict = {}  # noqa: RUF012
@@ -151,9 +149,7 @@ class SpiderBase[Item: BaseItem](
     def get_browser_config(self, **kwargs: Unpack[BrowserConfigDict]) -> Any:
         raise NotImplementedError("Must implement method crawl.")
 
-    def get_run_config(
-        self, item: Item, **kwargs: Unpack[CrawlerRunConfigDict]
-    ) -> dict[str, Any]:
+    def get_run_config(self, item: Item, **kwargs: Unpack[CrawlerRunConfigDict]) -> dict[str, Any]:
         run_config: dict[str, Any] = {
             "page_timeout": 120000,
             "wait_for": """js:() => {
@@ -179,9 +175,7 @@ class SpiderBase[Item: BaseItem](
             if soup.select_one('a[href*="cloudflare.com"]'):
                 result.success = False
             if result.status_code and result.status_code >= 400:
-                error = (
-                    f"Received non-200 status code {result.status_code} for {item.url}"
-                )
+                error = f"Received non-200 status code {result.status_code} for {item.url}"
                 print(error)
                 result.success = False
 
@@ -235,9 +229,7 @@ class SpiderBase[Item: BaseItem](
             "spider_name": self.__class__.__name__,
             "collection": self.collection_name,
             "html_bytes": len(result.html.encode("utf-8")),
-            "cleaned_html_bytes": (
-                len(result.cleaned_html.encode("utf-8")) if result.cleaned_html else 0
-            ),
+            "cleaned_html_bytes": (len(result.cleaned_html.encode("utf-8")) if result.cleaned_html else 0),
             "status_code": result.status_code,
             **time_stats.to_dict(),
         }
@@ -333,9 +325,7 @@ class BrowserSpider[Item: BaseItem](SpiderBase[Item]):
             return crawl_result
 
 
-class HTTPSpider[Item: BaseItem](
-    AutoItemModel[Item], PipelineHelper, ExtraContextMixin
-):
+class HTTPSpider[Item: BaseItem](AutoItemModel[Item], PipelineHelper, ExtraContextMixin):
     method: str = "GET"
     json_response: bool = True
     base_url: str = ""
@@ -487,21 +477,12 @@ class CDPSpider:
 
                     # 获取 Headers (异步方法 all_headers() 更可靠，返回字典，key 自动转为小写)
                     all_headers = await target_request.all_headers()
-                    headers = {
-                        k: v
-                        for k, v in all_headers.items()
-                        if not k.startswith(":") and k != "cookie"
-                    }
+                    headers = {k: v for k, v in all_headers.items() if not k.startswith(":") and k != "cookie"}
 
                     # 获取 Cookies (从 header 的 cookie 字段中提取)
                     cookies = None
                     if "cookie" in all_headers:
-                        cookies = dict(
-                            [
-                                p.split("=", maxsplit=1)
-                                for p in all_headers["cookie"].split("; ")
-                            ]
-                        )
+                        cookies = dict([p.split("=", maxsplit=1) for p in all_headers["cookie"].split("; ")])
 
                     result = {"params": params, "headers": headers, "cookies": cookies}
                     break

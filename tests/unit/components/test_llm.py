@@ -2,7 +2,6 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from litellm import Choices, Message, ModelResponse, Usage
-from tests.unit.components.conftest import ToyItem, ToySchema
 
 from prefect_pipeline.components.llm import (
     GenericExtractor,
@@ -10,6 +9,7 @@ from prefect_pipeline.components.llm import (
     LLMExtractor,
 )
 from prefect_pipeline.models.llm import CompletionConfig
+from tests.unit.components.conftest import ToyItem, ToySchema
 
 
 def _make_config() -> CompletionConfig:
@@ -25,7 +25,7 @@ def _fake_model_response(content: str) -> ModelResponse:
 
 async def test_extraction_strategy_parse_xml():
     strat = LLMExtractionStrategy(_make_config())
-    parsed = strat.parse_response("<blocks>{\"summary\": \"hi\"}</blocks>")
+    parsed = strat.parse_response('<blocks>{"summary": "hi"}</blocks>')
     assert parsed == {"summary": "hi", "error": False}
 
 
@@ -45,10 +45,8 @@ async def test_extraction_strategy_bad_response_raises():
 
 async def test_extract_calls_acompletion_and_parses():
     strat = LLMExtractionStrategy(_make_config())
-    fake = _fake_model_response("<blocks>{\"summary\": \"ok\"}</blocks>")
-    with patch(
-        "prefect_pipeline.components.llm.acompletion", new=AsyncMock(return_value=fake)
-    ):
+    fake = _fake_model_response('<blocks>{"summary": "ok"}</blocks>')
+    with patch("prefect_pipeline.components.llm.acompletion", new=AsyncMock(return_value=fake)):
         result = await strat.extract("do it")
     assert result == {"summary": "ok", "error": False}
     assert strat.total_usage.total_tokens == 3
@@ -64,12 +62,10 @@ async def test_llm_extractor_run_end_to_end():
     extractor.output_collection = None
     extractor.stats_collection = None
 
-    fake = _fake_model_response("<blocks>{\"summary\": \"extracted\"}</blocks>")
+    fake = _fake_model_response('<blocks>{"summary": "extracted"}</blocks>')
     item = ToyItem(url="https://x.com/1", title="t")
 
-    with patch(
-        "prefect_pipeline.components.llm.acompletion", new=AsyncMock(return_value=fake)
-    ):
+    with patch("prefect_pipeline.components.llm.acompletion", new=AsyncMock(return_value=fake)):
         result = await extractor.run(item)
 
     assert result is not None
@@ -92,7 +88,5 @@ def test_generic_extractor_output_field_no_suffix():
 def test_generic_extractor_transform_result_single_field():
     ext = ToyGeneric(_make_config())
     # schema has single field "summary"
-    result = ext.transform_result(
-        ToyItem(url="u"), {"summary": "s", "error": False, "index": 0}
-    )
+    result = ext.transform_result(ToyItem(url="u"), {"summary": "s", "error": False, "index": 0})
     assert result == "s"

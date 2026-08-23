@@ -1,4 +1,5 @@
 """Tests for prefect_pipeline.core.deployment — DAG operators and topology."""
+
 from __future__ import annotations
 
 from prefect_pipeline.core.deployment import Deployment, Node
@@ -7,6 +8,7 @@ from prefect_pipeline.core.runner_base import FlowRunnerBase
 # --------------------------------------------------------------------------- #
 # Mock runner and injectors
 # --------------------------------------------------------------------------- #
+
 
 class MockRunner(FlowRunnerBase):
     project_name = "test"
@@ -30,6 +32,7 @@ def _make_dep(name: str, runner: type[FlowRunnerBase] = MockRunner) -> Deploymen
 # Basic Deployment construction
 # --------------------------------------------------------------------------- #
 
+
 def test_deployment_create_empty():
     dep = Deployment.create()
     assert dep.node is None
@@ -51,6 +54,7 @@ def test_deployment_name_set_via_init():
 # --------------------------------------------------------------------------- #
 # Peer / child management
 # --------------------------------------------------------------------------- #
+
 
 def test_add_peer():
     a = _make_dep("A")
@@ -96,6 +100,7 @@ def test_add_peer_no_duplicate():
 # __add__ (parallel) operator
 # --------------------------------------------------------------------------- #
 
+
 def test_add_operator_creates_parallel():
     a = _make_dep("A")
     b = _make_dep("B")
@@ -117,6 +122,7 @@ def test_add_operator_flattens_empty_peers():
 # --------------------------------------------------------------------------- #
 # __rshift__ (serial) operator
 # --------------------------------------------------------------------------- #
+
 
 def test_rshift_creates_child():
     a = _make_dep("A")
@@ -146,6 +152,7 @@ def test_rshift_chain():
 # --------------------------------------------------------------------------- #
 # Topology: get_tails, get_terminal_nodes, get_head_nodes, parse_topology
 # --------------------------------------------------------------------------- #
+
 
 def test_get_tails_single():
     a = _make_dep("A")
@@ -237,6 +244,7 @@ def test_parse_topology_parallel_with_child():
 # get_deployment_name
 # --------------------------------------------------------------------------- #
 
+
 def test_get_deployment_name_basic():
     a = _make_dep("TestFlow")
     name = a.get_deployment_name()
@@ -255,6 +263,7 @@ def test_get_deployment_name_raises_without_name():
 # --------------------------------------------------------------------------- #
 # set_deployment_parameters
 # --------------------------------------------------------------------------- #
+
 
 def test_set_deployment_parameters():
     a = _make_dep("TestFlow")
@@ -283,6 +292,7 @@ def test_set_deployment_parameters_with_extra():
 # --------------------------------------------------------------------------- #
 # Node properties
 # --------------------------------------------------------------------------- #
+
 
 def test_node_ns():
     node = Node(MockRunner, injector_a)

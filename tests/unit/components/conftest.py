@@ -1,4 +1,3 @@
-
 from prefect_pipeline.models import BaseItem
 from prefect_pipeline.models.schemas import SchemaBase
 

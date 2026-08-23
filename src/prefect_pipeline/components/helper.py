@@ -118,17 +118,13 @@ class PipelineHelper:
     bulk_write_size: int = 100
     update_op: type[UpdateOp] = UrlSet
 
-    def get_records(
-        self, data: dict[str, Any]
-    ) -> dict[str, Any] | list[dict[str, Any]]:
+    def get_records(self, data: dict[str, Any]) -> dict[str, Any] | list[dict[str, Any]]:
         return data
 
     def transform_record(self, record: dict[str, Any]) -> UpdateOp | dict[str, Any]:
         return self.update_op(record)
 
-    def generate(
-        self, records: list[dict[str, Any]]
-    ) -> Generator[UpdateOp, Any]:
+    def generate(self, records: list[dict[str, Any]]) -> Generator[UpdateOp, Any]:
         for record in records:
             o = self.transform_record(record)
             if not isinstance(o, UpdateOp):

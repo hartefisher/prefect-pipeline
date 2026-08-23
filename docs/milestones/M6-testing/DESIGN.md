@@ -7,21 +7,26 @@
 ```
 tests/
 ├── conftest.py            # 全局 fixtures + fakes 注册
-├── unit/                  # L1（M2~M5 交付，此处归档组织）
+├── __init__.py
+├── unit/                  # L1（M2~M5 交付，此处归档组织）+ 覆盖率补测
 │   ├── models/  infra/  core/  components/  runners/
+│   ├── test_main.py          # main 入口 smoke
+│   └── test_fakes_smoke.py   # fakes 自检
 ├── regression/            # L2 DAG 语义回归
 │   ├── test_dag_semantics.py
 │   ├── test_trigger_lifecycle.py
-│   └── test_backfill_idempotency.py
-├── e2e/                   # L3
-│   ├── mini_pipeline/
-│   │   ├── flows/         # 3 个 toy Flow（fetch → transform → embed）
-│   │   └── test_mini_pipeline.py
-├── integration/           # L4（C6.1 确认后建设）
-│   ├── docker-compose.yml # mongo + qdrant
-│   └── test_services.py
-└── markers.ini            # slow / integration 标记注册
+│   ├── test_backfill_idempotency.py
+│   └── test_trigger_branches.py   # trigger 边角分支（disable/peer 过滤/去重）
+├── e2e/                   # L3（标记为 slow，不计入覆盖率基线）
+│   └── mini_pipeline/
+│       ├── flows/         # 3 个 toy Flow（fetch → transform → embed）
+│       └── test_mini_pipeline.py
+└── fakes/                 # FakeMongoCollection / FakeQdrantClient / FakeLLM / FakeTransport
 ```
+
+> **C6.1 决策（2026-08-23）**：不建设 `tests/integration/`（L4 docker-compose）。框架仅使用驱动 API 子集，fakes 已全覆盖；真实驱动差异由 M7 示例业务项目回归兜底。标记 `integration` 保留为未来可选扩展点。
+>
+> **实际交付与文档描述的偏差**：`markers.ini` 改为写入 `pyproject.toml [tool.pytest.ini_options] markers`（slow / integration）；`fakes/` 独立成包而非内联于 conftest。
 
 ## 2. 测试基础设施设计（功能点 6.1）
 
@@ -95,6 +100,20 @@ steps: install (uv/pip) → ruff → mypy → pytest -m "not integration"
 
 | 风险 | 缓解 |
 | --- | --- |
-| Prefect ephemeral 模式与部署行为差异 | L3 仅验证 DAG 触发链路；真实调度差异靠 M7 业务 回归兜底 |
-| Fake motor 聚合语义与真实 MongoDB 漂移 | Fake 只实现框架用到的聚合子集并文档化；C6.1 的 L4 补真实容器验证 |
+| Prefect ephemeral 模式与部署行为差异 | L3 仅验证 DAG 触发链路；真实调度差异靠 M7 示例业务项目回归兜底 |
+| Fake motor 聚合语义与真实 MongoDB 漂移 | Fake 只实现框架用到的聚合子集并文档化；C6.1 已决议不建设 L4，由 M7 业务回归兜底 |
 | 异步测试不稳定（事件循环泄漏） | pytest-asyncio strict 模式 + fixture 生命周期统一管理 |
+
+## 7. 验收结果（2026-08-23）
+
+| 检查项 | 命令 | 结果 |
+| --- | --- | --- |
+| 单元测试 + 回归 + E2E（非 slow/integration） | `pytest -m "not slow and not integration"` | **282 passed, 1 deselected** |
+| 总覆盖率门槛 | `coverage report` | **77.6%** ≥ 75% ✓ |
+| core 合计覆盖率 | `coverage.json` 解析 `src/prefect_pipeline/core/*` | **85.3%**（658/771）≥ 85% ✓ |
+| lint | `ruff check .` | All checks passed |
+| 格式 | `ruff format --check .` | 84 files already formatted |
+| 类型 | `mypy src` | Success: no issues found in 34 source files |
+| CI | `.github/workflows/test.yml` | py3.12/3.13 matrix，push/PR 双触发，含 ruff/mypy/pytest + core≥85% JSON 断言 |
+
+> core 单文件未全部 ≥85%（runner_base 84.1% / ns_converter 78.9% / orchestration 82.8% / loader 84.8%），但合计 85.3% 已满足门禁。门禁只校验合计值，与单文件无关。

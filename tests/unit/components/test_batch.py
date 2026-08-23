@@ -83,9 +83,7 @@ def test_job_status_mapping_covers_expected_phases():
 
 
 def test_construct_json_includes_method_and_url():
-    job = BatchReasoningJob(
-        os_bucket="b", job_name="j", file_path="p", model_name="m", model_version="v"
-    )
+    job = BatchReasoningJob(os_bucket="b", job_name="j", file_path="p", model_name="m", model_version="v")
     data = job.construct_json("id-1", "hello", {"temperature": 0.2})
     assert data["custom_id"] == "id-1"
     assert data["method"] == "POST"

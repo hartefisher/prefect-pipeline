@@ -42,9 +42,7 @@ from ..models.llm import (
 from .base import PipelineFlow
 
 
-class ReasoningFlow[Item: BaseItem](
-    PipelineFlow[tuple[type[GenericExtractor[Item]], type[DataFetcher[Item]]]]
-):
+class ReasoningFlow[Item: BaseItem](PipelineFlow[tuple[type[GenericExtractor[Item]], type[DataFetcher[Item]]]]):
     """LLM reasoning over items via an injected :class:`GenericExtractor`.
 
     Supports two modes selected by the resolved LLM config:
@@ -79,13 +77,9 @@ class ReasoningFlow[Item: BaseItem](
         if llm_config_ is None:
             raise ValueError(f"Can't find llm config: {ns}")
 
-        strategy = (
-            BatchLLMExtractionStrategy if llm_config_.batch else LLMExtractionStrategy
-        )
+        strategy = BatchLLMExtractionStrategy if llm_config_.batch else LLMExtractionStrategy
         batch_id = flow_run.get_id()
-        self.extractor = Extractor(
-            llm_config_, strategy=strategy, batch_id=batch_id, **extra
-        )
+        self.extractor = Extractor(llm_config_, strategy=strategy, batch_id=batch_id, **extra)
         self.batch_job_id = batch_job_id
         self.data_fetcher = DataFetcher()
         self.retriable_requests = 0
@@ -98,9 +92,7 @@ class ReasoningFlow[Item: BaseItem](
         if self.data_flag:
             logger.info(f"Start to check items for {self.data_flag}")
         filter = (
-            self.filter
-            if self.extractor.override
-            else {**self.filter, self.extractor.output_field: {"$exists": False}}
+            self.filter if self.extractor.override else {**self.filter, self.extractor.output_field: {"$exists": False}}
         )
         kwargs: QueryDict = {"filter": filter}
         if self.extractor.limit:
@@ -144,11 +136,7 @@ class ReasoningFlow[Item: BaseItem](
                         }
                     },
                     {"$project": {"_id": 0, "model": 0, "ns": 0}},
-                    {
-                        "$replaceRoot": {
-                            "newRoot": {"$mergeObjects": ["$llm_configs", "$$ROOT"]}
-                        }
-                    },
+                    {"$replaceRoot": {"newRoot": {"$mergeObjects": ["$llm_configs", "$$ROOT"]}}},
                     {"$project": {"_id": 0, "llm_configs": 0, "ns": 0}},
                 ]
             ).to_list()
@@ -234,9 +222,7 @@ class ReasoningFlow[Item: BaseItem](
         logger.info(f"Start running reasoning task: {self.extractor.output_field}")
         if self.extractor.concurrent_requests > 1:
             semaphore = asyncio.Semaphore(self.extractor.concurrent_requests)
-            await asyncio.gather(
-                *[self.request_and_upsert(semaphore, product) for product in products]
-            )
+            await asyncio.gather(*[self.request_and_upsert(semaphore, product) for product in products])
         else:
             for product in products:
                 await self.request(product)  # type: ignore[call-overload]
@@ -287,10 +273,7 @@ class ReasoningFlow[Item: BaseItem](
             return True
         elif response.status in ("Terminating", "Terminated", "Failed"):
             logger.info(f"Batch job {response.status.lower()}." + progress)
-            return bool(
-                response.request_counts.completed
-                and response.request_counts.completed > 0
-            )
+            return bool(response.request_counts.completed and response.request_counts.completed > 0)
         msg = f"Phase of batch job: {response.status}."
         if response.status in ("Running", "Completed"):
             msg += progress
@@ -387,9 +370,7 @@ class ReasoningFlow[Item: BaseItem](
     @task(cache_policy=NO_SELF, retries=3, retry_delay_seconds=[60, 120, 180])
     def get_result(self, batch_job_id: str) -> tuple[str, str]:
         logger = get_run_logger()
-        results_file_name, errors_file_name = self.batch_handler.get_result(
-            batch_job_id
-        )
+        results_file_name, errors_file_name = self.batch_handler.get_result(batch_job_id)
         logger.info(f"Got result: {batch_job_id}. Saved to '{results_file_name}'.")
         if errors_file_name:
             logger.info(f"Errors ocurred: {batch_job_id}. Check '{errors_file_name}'")
@@ -410,21 +391,14 @@ class ReasoningFlow[Item: BaseItem](
             batch_job_id = await self.create_batch_job()  # type: ignore[call-overload]
             ok = await self.check_batch_job(batch_job_id)  # type: ignore[call-overload]
             if not ok:
-                raise BatchJobFailed(
-                    f"Batch job {batch_job_id} failed or completed with no results."
-                )
+                raise BatchJobFailed(f"Batch job {batch_job_id} failed or completed with no results.")
         else:
             batch_job_id = self.batch_job_id
         results_file_name, errors_file_name = self.get_result(batch_job_id)  # type: ignore[call-overload]
         data = await self.get_data(results_file_name, errors_file_name)  # type: ignore[call-overload]
 
         semaphore = asyncio.Semaphore(30)
-        await asyncio.gather(
-            *[
-                self.batch_upsert(semaphore, product, response)
-                for product, response in data
-            ]
-        )
+        await asyncio.gather(*[self.batch_upsert(semaphore, product, response) for product, response in data])
 
 
 class OverallReasoningFlow(ReasoningFlow[BaseItem]):

@@ -1,9 +1,11 @@
 # M6 — 框架级测试套件（PRD）
 
-> **状态**: 未开始
+> **状态**: ✅ 已完成（2026-08-23）
 > **前置**: M5（测试基础设施自 M2 起持续交付，本里程碑专项收口）
 > **GitHub Milestone**: `M6`
 > **总纲**: [../PRD.md](../PRD.md) · **设计**: [DESIGN.md](./DESIGN.md)
+>
+> **验收结论**: 全量 `pytest -m "not slow and not integration"` 绿（282 passed / 1 deselected）；总覆盖 **77.6%**（≥75% ✓）；`src/prefect_pipeline/core` 合计 **85.3%**（≥85% ✓）；ruff check/format、mypy src 全绿；CI `.github/workflows/test.yml`（py3.12/3.13 matrix）已实现双触发。C6.1 决策：**采用纯 fake（不引入 docker-compose L4）**。
 
 ## 1. 目标
 
@@ -20,18 +22,18 @@
 
 ## 3. 功能点（全部挂 Issue）
 
-| # | 功能点 | 标签 |
-| --- | --- | --- |
-| 6.1 | 测试基础设施：`tests/conftest.py` + Mongo/Qdrant/LLM/HTTP fakes + fixtures | testing |
-| 6.2 | DAG 语义回归测试：序列/并行/混合/peer 检查/条件触发/Backfill 幂等 | testing |
-| 6.3 | E2E 集成测试：mini pipeline（3 Flow DAG）ephemeral Prefect 运行 | testing |
-| 6.4 | 覆盖率门槛（pytest-cov：core ≥85%，全包 ≥75%）+ CI test workflow（py3.12/3.13 matrix） | testing |
+| # | 功能点 | 标签 | 状态 |
+| --- | --- | --- | --- |
+| 6.1 | 测试基础设施：`tests/conftest.py` + Mongo/Qdrant/LLM/HTTP fakes + fixtures | testing | ✅ 完成 |
+| 6.2 | DAG 语义回归测试：序列/并行/混合/peer 检查/条件触发/Backfill 幂等 | testing | ✅ 完成 |
+| 6.3 | E2E 集成测试：mini pipeline（3 Flow DAG）ephemeral Prefect 运行 | testing | ✅ 完成 |
+| 6.4 | 覆盖率门槛（pytest-cov：core ≥85%，全包 ≥75%）+ CI test workflow（py3.12/3.13 matrix） | testing | ✅ 完成 |
 
 ## 4. 确认点（挂 Issue，标签 `confirmation`）
 
 | # | 确认点 | 背景 |
 | --- | --- | --- |
-| C6.1 | L4 服务集成测试依赖 docker-compose（真实 Mongo/Qdrant 容器）还是纯 fake？ | docker-compose 更真实但 CI 需容器支持；纯 fake 全平台可跑但覆盖不到驱动行为差异 |
+| C6.1 | L4 服务集成测试依赖 docker-compose（真实 Mongo/Qdrant 容器）还是纯 fake？ | docker-compose 更真实但 CI 需容器支持；纯 fake 全平台可跑但覆盖不到驱动行为差异 | **决策（2026-08-23）：采用纯 fake，不建设 L4 docker-compose 集成测试。** 理由：框架仅使用 motor/Qdrant/LLM 的有限 API 子集，FakeMongoCollection/FakeQdrantClient/FakeLLM 已覆盖全部调用路径；引入容器会使 CI 变慢且需服务编排，收益不足。真实驱动差异由 M7 示例业务项目回归兜底。 |
 
 ## 5. 验收标准
 

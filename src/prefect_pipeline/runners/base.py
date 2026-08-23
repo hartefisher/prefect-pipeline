@@ -13,9 +13,7 @@ class Retry(FlowRunnerBase):
     # timeout_seconds = 720
 
 
-class PipelineFlow[Injectors: tuple[type[Any], ...] = tuple[type[Any], ...]](
-    FlowRunnerBase[Injectors]
-):
+class PipelineFlow[Injectors: tuple[type[Any], ...] = tuple[type[Any], ...]](FlowRunnerBase[Injectors]):
     """Generic base class for all pipeline flows.
 
     Replaces the source project's ``ProductHuntFlow``. The ``project_name``
@@ -64,8 +62,7 @@ class PipelineFlow[Injectors: tuple[type[Any], ...] = tuple[type[Any], ...]](
             return {
                 name: parameter
                 for name, parameter in parameters.items()
-                if name
-                not in ("dt", "days", "offset", "backfill", "fill_direction")
+                if name not in ("dt", "days", "offset", "backfill", "fill_direction")
             }
         return parameters
 

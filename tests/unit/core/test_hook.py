@@ -1,4 +1,5 @@
 """Tests for prefect_pipeline.core.runner_base — Hook registration."""
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -10,6 +11,7 @@ from prefect_pipeline.core.runner_base import FlowRunnerBase, Hook
 # --------------------------------------------------------------------------- #
 # Hook construction
 # --------------------------------------------------------------------------- #
+
 
 def test_hook_default_events():
     h = Hook(fn=lambda: None)
@@ -34,6 +36,7 @@ def test_hook_multiple_events():
 # Hook.on decorator
 # --------------------------------------------------------------------------- #
 
+
 def test_hook_on_with_fn():
     def my_fn() -> None:
         pass
@@ -55,6 +58,7 @@ def test_hook_on_as_decorator():
 # --------------------------------------------------------------------------- #
 # Minimal base class (no inherited hooks) for isolated testing
 # --------------------------------------------------------------------------- #
+
 
 class _HookTestBase:
     """Minimal base with __init_subclass__ hook collection, no pre-existing hooks."""
@@ -94,6 +98,7 @@ class _HookTestBase:
 # --------------------------------------------------------------------------- #
 # __init_subclass__ hook collection
 # --------------------------------------------------------------------------- #
+
 
 def test_subclass_collects_hooks():
     class MyRunner(_HookTestBase):
@@ -158,6 +163,7 @@ def test_get_hooks_returns_none_when_empty():
 # FlowRunnerBase inherited hooks (integration)
 # --------------------------------------------------------------------------- #
 
+
 def test_subclass_inherits_base_hooks():
     class SubRunner(FlowRunnerBase):
         @Hook.on(event="running")
@@ -182,6 +188,7 @@ def test_plain_subclass_inherits_base_hooks():
 # --------------------------------------------------------------------------- #
 # set_flow_parameters / extract_parameters
 # --------------------------------------------------------------------------- #
+
 
 def test_set_flow_parameters_returns_dict():
     class ParamRunner(FlowRunnerBase):

@@ -30,17 +30,11 @@ def check_jsonl_file(file_path: str) -> int:
             except json.decoder.JSONDecodeError:
                 raise Exception(f"批量推理输入文件格式错误，第{total + 1}行非json数据") from None
             if not line_dict.get("custom_id"):
-                raise Exception(
-                    f"批量推理输入文件格式错误，第{total + 1}行custom_id不存在"
-                )
+                raise Exception(f"批量推理输入文件格式错误，第{total + 1}行custom_id不存在")
             if not isinstance(line_dict.get("custom_id"), str):
-                raise Exception(
-                    f"批量推理输入文件格式错误，第{total + 1}行custom_id不是string"
-                )
+                raise Exception(f"批量推理输入文件格式错误，第{total + 1}行custom_id不是string")
             if line_dict.get("custom_id") in custom_id_set:
-                raise Exception(
-                    f"批量推理输入文件格式错误，custom_id={line_dict.get('custom_id', '')}存在重复"
-                )
+                raise Exception(f"批量推理输入文件格式错误，custom_id={line_dict.get('custom_id', '')}存在重复")
             else:
                 custom_id_set.add(line_dict.get("custom_id"))
             if not isinstance(line_dict.get("body", ""), dict):
@@ -92,19 +86,13 @@ class BatchReasoningJobBase:
         self.error_file_id: str | None = None
 
     def upload_data(self) -> None:
-        raise NotImplementedError(
-            "BatchReasoningJob is an abstract class, please use its subclass to upload data"
-        )
+        raise NotImplementedError("BatchReasoningJob is an abstract class, please use its subclass to upload data")
 
     async def create_batch_job(self) -> str:
-        raise NotImplementedError(
-            "BatchReasoningJob is an abstract class, please use its subclass to create batch job"
-        )
+        raise NotImplementedError("BatchReasoningJob is an abstract class, please use its subclass to create batch job")
 
     def check_batch_job(self, batch_job_id: str) -> BatchJobResponse | None:
-        raise NotImplementedError(
-            "BatchReasoningJob is an abstract class, please use its subclass to check batch job"
-        )
+        raise NotImplementedError("BatchReasoningJob is an abstract class, please use its subclass to check batch job")
 
     def get_result(self, batch_job_id: str) -> tuple[str, str]:
         raise NotImplementedError(
@@ -152,9 +140,7 @@ class BatchReasoningJob(BatchReasoningJobBase):
         print(f"文件中有效JSON数据的行数为: {total_lines}")
 
         # 上传文件
-        file_object = self.client.files.create(
-            file=Path(self.local_file_path), purpose="batch"
-        )
+        file_object = self.client.files.create(file=Path(self.local_file_path), purpose="batch")
         self.input_file_id = file_object.id
 
     async def create_batch_job(self) -> str:
@@ -190,18 +176,14 @@ class BatchReasoningJob(BatchReasoningJobBase):
         errors_file_name = ""
 
         if self.output_file_id:
-            results_file_name = (
-                f"{self.local_folder}/{self.job_name}-results-{batch_job_id}.jsonl"
-            )
+            results_file_name = f"{self.local_folder}/{self.job_name}-results-{batch_job_id}.jsonl"
             results = self.client.files.content(file_id=self.output_file_id)
 
             # 保存结果文件至本地
             results.write_to_file(results_file_name)
 
         if self.error_file_id:
-            errors_file_name = (
-                f"{self.local_folder}/{self.job_name}-errors-{batch_job_id}.jsonl"
-            )
+            errors_file_name = f"{self.local_folder}/{self.job_name}-errors-{batch_job_id}.jsonl"
             errors = self.client.files.content(file_id=self.error_file_id)
 
             # 保存错误文件至本地
@@ -218,9 +200,7 @@ class ArkBatchReasoningJob(BatchReasoningJobBase):
     def os_client(self) -> Any:
         import tos
 
-        return tos.TosClientV2(
-            VOLC_ACCESSKEY, VOLC_SECRETKEY, self.endpoint, self.region
-        )
+        return tos.TosClientV2(VOLC_ACCESSKEY, VOLC_SECRETKEY, self.endpoint, self.region)
 
     @cached_property
     def client(self) -> Any:
@@ -241,34 +221,24 @@ class ArkBatchReasoningJob(BatchReasoningJobBase):
         print(f"文件中有效JSON数据的行数为: {total_lines}")
 
         # 上传文件
-        self.os_client.put_object_from_file(
-            self.os_bucket, self.input_object_key, self.local_file_path
-        )
+        self.os_client.put_object_from_file(self.os_bucket, self.input_object_key, self.local_file_path)
 
     # 创建批量推理任务
     async def create_batch_job(self) -> str:
         import volcenginesdkark
 
-        input_file_tos_location = (
-            volcenginesdkark.InputFileTosLocationForCreateBatchInferenceJobInput(
-                bucket_name=self.os_bucket,
-                object_key=self.input_object_key,
-            )
+        input_file_tos_location = volcenginesdkark.InputFileTosLocationForCreateBatchInferenceJobInput(
+            bucket_name=self.os_bucket,
+            object_key=self.input_object_key,
         )
-        output_dir_tos_location = (
-            volcenginesdkark.OutputDirTosLocationForCreateBatchInferenceJobInput(
-                bucket_name=self.os_bucket, object_key=f"{self.file_path}/"
-            )
+        output_dir_tos_location = volcenginesdkark.OutputDirTosLocationForCreateBatchInferenceJobInput(
+            bucket_name=self.os_bucket, object_key=f"{self.file_path}/"
         )
-        foundation_model = (
-            volcenginesdkark.FoundationModelForCreateBatchInferenceJobInput(
-                model_version=self.model_version, name=self.model_name
-            )
+        foundation_model = volcenginesdkark.FoundationModelForCreateBatchInferenceJobInput(
+            model_version=self.model_version, name=self.model_name
         )
-        model_reference = (
-            volcenginesdkark.ModelReferenceForCreateBatchInferenceJobInput(
-                foundation_model=foundation_model
-            )
+        model_reference = volcenginesdkark.ModelReferenceForCreateBatchInferenceJobInput(
+            foundation_model=foundation_model
         )
         req = volcenginesdkark.CreateBatchInferenceJobRequest(
             input_file_tos_location=input_file_tos_location,
@@ -288,9 +258,7 @@ class ArkBatchReasoningJob(BatchReasoningJobBase):
     def check_batch_job(self, batch_job_id: str) -> BatchJobResponse | None:
         import volcenginesdkark
 
-        filter = volcenginesdkark.FilterForListBatchInferenceJobsInput(
-            ids=[batch_job_id]
-        )
+        filter = volcenginesdkark.FilterForListBatchInferenceJobsInput(ids=[batch_job_id])
         req = volcenginesdkark.ListBatchInferenceJobsRequest(filter=filter)
         resp = cast(
             "volcenginesdkark.models.ListBatchInferenceJobsResponse",
@@ -324,12 +292,8 @@ class ArkBatchReasoningJob(BatchReasoningJobBase):
     def get_result(self, batch_job_id: str) -> tuple[str, str]:
         results_key = f"{self.file_path}/{batch_job_id}/output/results.jsonl"
         errors_key = f"{self.file_path}/{batch_job_id}/error/errors.jsonl"
-        results_file_name = (
-            f"{self.local_folder}/{self.job_name}-results-{batch_job_id}.jsonl"
-        )
-        errors_file_name = (
-            f"{self.local_folder}/{self.job_name}-errors-{batch_job_id}.jsonl"
-        )
+        results_file_name = f"{self.local_folder}/{self.job_name}-results-{batch_job_id}.jsonl"
+        errors_file_name = f"{self.local_folder}/{self.job_name}-errors-{batch_job_id}.jsonl"
         # self.client.get_object_to_file(self.tos_bucket, results_key, results_file_name)
         output = self.os_client.get_object(self.os_bucket, results_key)
         output_file = Path(results_file_name)

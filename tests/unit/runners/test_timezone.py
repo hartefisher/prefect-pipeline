@@ -4,6 +4,7 @@ The framework's "current date" is derived from the framework-level TIMEZONE
 config (defaults to UTC). A subclass can override ``timezone`` to keep
 business behavior (e.g. Asia/Shanghai) without any hardcoded constant.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta

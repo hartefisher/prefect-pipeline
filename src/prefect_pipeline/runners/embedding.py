@@ -10,9 +10,7 @@ from ..models import BaseItem
 from .base import PipelineFlow
 
 
-class EmbeddingFlow[Item: BaseItem](
-    PipelineFlow[tuple[type[EmbeddingHandler[Item]], type[DataFetcher[Item]]]]
-):
+class EmbeddingFlow[Item: BaseItem](PipelineFlow[tuple[type[EmbeddingHandler[Item]], type[DataFetcher[Item]]]]):
     """Vectorize items via an injected :class:`EmbeddingHandler`."""
 
     async def setup(

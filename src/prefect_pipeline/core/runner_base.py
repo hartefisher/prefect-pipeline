@@ -190,9 +190,7 @@ class FlowRunnerBase[Injectors: tuple[Callable[..., Any], ...] = tuple[Callable[
         fill_direction: Literal["backward", "forward"] = "backward",
         **kwargs: Any,
     ) -> str:
-        start_date, end_date = cls.get_time_window(
-            dt, days, offset, backfill, fill_direction
-        )
+        start_date, end_date = cls.get_time_window(dt, days, offset, backfill, fill_direction)
         if start_date != end_date:
             run_name: str = f"{start_date}-{end_date}"
         else:
@@ -216,43 +214,31 @@ class FlowRunnerBase[Injectors: tuple[Callable[..., Any], ...] = tuple[Callable[
 
     @Hook.on(event="running")  # type: ignore[operator, untyped-decorator]
     @classmethod
-    async def update_flow_run(
-        cls, flow: Flow[Any, Any], flow_run: FlowRun, state: State[Any]
-    ) -> None:
+    async def update_flow_run(cls, flow: Flow[Any, Any], flow_run: FlowRun, state: State[Any]) -> None:
         logger = flow_run_logger(flow_run, flow)
 
         new_parameters: dict[str, Any] = {**flow_run.parameters}
         macro_variables: dict[str, Any] = (
-            cast(dict[str, Any], flow_run.job_variables.get("macro_variables", {}))
-            if flow_run.job_variables
-            else {}
+            cast(dict[str, Any], flow_run.job_variables.get("macro_variables", {})) if flow_run.job_variables else {}
         )
 
         for k in MACRO_VARIABLES.get(cls.project_name, {}):
-            if k in flow.parameters.properties and (
-                k not in flow_run.parameters or flow_run.parameters[k] is None
-            ):
+            if k in flow.parameters.properties and (k not in flow_run.parameters or flow_run.parameters[k] is None):
                 if k in macro_variables:
                     new_parameters[k] = macro_variables[k]
                 elif k == "dt":
                     new_parameters[k] = cls.get_current_date().strftime("%Y%m%d")
 
         name: str = cls.flow_run_name(**{**macro_variables, **new_parameters})
-        parameters: dict[str, Any] | None = (
-            new_parameters if new_parameters != flow_run.parameters else None
-        )
+        parameters: dict[str, Any] | None = new_parameters if new_parameters != flow_run.parameters else None
 
         async with get_client() as client:
-            await client.update_flow_run(
-                flow_run_id=flow_run.id, name=name, parameters=parameters
-            )
+            await client.update_flow_run(flow_run_id=flow_run.id, name=name, parameters=parameters)
         logger.info("Updated flow run name and parameters.")
 
     @Hook.on(event="completion")  # type: ignore[operator, untyped-decorator]
     @classmethod
-    async def schedule_next_run(
-        cls, flow: Flow[Any, Any], flow_run: FlowRun, state: State[Any]
-    ) -> None:
+    async def schedule_next_run(cls, flow: Flow[Any, Any], flow_run: FlowRun, state: State[Any]) -> None:
         logger = flow_run_logger(flow_run, flow)
         backfill: bool = flow_run.parameters.get("backfill", False)
         if not backfill:
@@ -270,9 +256,7 @@ class FlowRunnerBase[Injectors: tuple[Callable[..., Any], ...] = tuple[Callable[
                 return
 
             offset: int = -1 if fill_direction == "backward" else 1
-            next_date: datetime = datetime.strptime(current_date, "%Y%m%d") + timedelta(
-                days=offset
-            )
+            next_date: datetime = datetime.strptime(current_date, "%Y%m%d") + timedelta(days=offset)
             next_date_str: str = next_date.strftime("%Y%m%d")
 
             if flow_run.deployment_id is None:
@@ -296,19 +280,14 @@ class FlowRunnerBase[Injectors: tuple[Callable[..., Any], ...] = tuple[Callable[
     # ------------------------------------------------------------------
 
     @classmethod
-    async def get_deployment_context(
-        cls, deployment_name: str
-    ) -> DeploymentContext | None:
+    async def get_deployment_context(cls, deployment_name: str) -> DeploymentContext | None:
         # C3.1: version_id is written by FlowsLoader.write_deployment_map()
         # into prefect_pipeline/generated/deployments.py. The import is lazy
         # so the framework can be used without the generated module present.
         try:
             from ..generated.deployments import version_id
         except ImportError:
-            print(
-                "Warning: generated.deployments module not found. "
-                "Run FlowsLoader.load() to generate it."
-            )
+            print("Warning: generated.deployments module not found. Run FlowsLoader.load() to generate it.")
             return None
 
         PREFECT: MongoDB = get_prefect()
@@ -371,9 +350,7 @@ class FlowRunnerBase[Injectors: tuple[Callable[..., Any], ...] = tuple[Callable[
 
     @Hook.on(event=["completion", "failure"])  # type: ignore[operator, untyped-decorator]
     @classmethod
-    async def trigger(
-        cls, flow: Flow[Any, Any], flow_run: FlowRun, state: State[Any]
-    ) -> None:
+    async def trigger(cls, flow: Flow[Any, Any], flow_run: FlowRun, state: State[Any]) -> None:
         """Core trigger engine — inspects deployment context and peer runs,
         then dispatches downstream deployments via ``run_deployment``.
 
@@ -396,9 +373,7 @@ class FlowRunnerBase[Injectors: tuple[Callable[..., Any], ...] = tuple[Callable[
         if deployment_name is None:
             return
 
-        deployment_context_: DeploymentContext | None = (
-            await cls.get_deployment_context(deployment_name)
-        )
+        deployment_context_: DeploymentContext | None = await cls.get_deployment_context(deployment_name)
         if deployment_context_ is None:
             logger.info(f"No deployment context: {deployment_name}.")
             return
@@ -415,9 +390,7 @@ class FlowRunnerBase[Injectors: tuple[Callable[..., Any], ...] = tuple[Callable[
 
         # Step 4: collect peer deployment names
         peer_deployment_names: list[str] = [
-            peer.ns.split("/")[-1]
-            for peer in deployment_context.peer_tails
-            if peer.active
+            peer.ns.split("/")[-1] for peer in deployment_context.peer_tails if peer.active
         ]
 
         peer_runs: dict[UUID, FlowRun] = {}
@@ -426,13 +399,9 @@ class FlowRunnerBase[Injectors: tuple[Callable[..., Any], ...] = tuple[Callable[
         if peer_deployment_names:
             async with get_client() as client:
                 completed_runs = await client.read_flow_runs(
-                    deployment_filter=DeploymentFilter(
-                        name=DeploymentFilterName(any_=peer_deployment_names)
-                    ),
+                    deployment_filter=DeploymentFilter(name=DeploymentFilterName(any_=peer_deployment_names)),
                     flow_run_filter=FlowRunFilter(
-                        start_time=FlowRunFilterStartTime(
-                            after_=datetime.now(UTC) - timedelta(days=7)
-                        )
+                        start_time=FlowRunFilterStartTime(after_=datetime.now(UTC) - timedelta(days=7))
                     ),
                     limit=100,
                 )
@@ -460,9 +429,7 @@ class FlowRunnerBase[Injectors: tuple[Callable[..., Any], ...] = tuple[Callable[
 
         # Step 6: trigger downstream
         if peer_deployment_names:
-            logger.info(
-                f"Completed peer runs: {len(peer_runs)}/{len(peer_deployment_names)}."
-            )
+            logger.info(f"Completed peer runs: {len(peer_runs)}/{len(peer_deployment_names)}.")
 
         if len(peer_deployment_names) != len(peer_runs):
             return
@@ -498,9 +465,7 @@ class FlowRunnerBase[Injectors: tuple[Callable[..., Any], ...] = tuple[Callable[
                     continue
 
             # Prepare downstream parameters and context
-            job_variables_: dict[str, Any] = extra_context.model_dump(
-                include={"macro_variables", "starter_id"}
-            )
+            job_variables_: dict[str, Any] = extra_context.model_dump(include={"macro_variables", "starter_id"})
 
             if extra_context.macro_variables is None:
                 macro_variables: dict[str, Any] = {}
@@ -535,11 +500,7 @@ class FlowRunnerBase[Injectors: tuple[Callable[..., Any], ...] = tuple[Callable[
     @classmethod
     def extract_parameters(cls, **kwargs: Any) -> dict[str, inspect.Parameter]:
         runner_signature: inspect.Signature = inspect.signature(cls.__init__)
-        return {
-            name: parameter
-            for name, parameter in runner_signature.parameters.items()
-            if name != "self"
-        }
+        return {name: parameter for name, parameter in runner_signature.parameters.items() if name != "self"}
 
     @classmethod
     def copy_signature(cls, fn: Callable[..., Any], **kwargs: Any) -> inspect.Signature:
@@ -549,12 +510,8 @@ class FlowRunnerBase[Injectors: tuple[Callable[..., Any], ...] = tuple[Callable[
 
     @classmethod
     def get_hooks(cls, event: str) -> FlowStateHooks | None:
-        external_hooks: FlowStateHooks | None = cast(
-            FlowStateHooks | None, getattr(cls, f"on_{event}", None)
-        )
-        cls_hooks: FlowStateHooks | None = cast(
-            FlowStateHooks | None, getattr(cls, f"_on_{event}", None)
-        )
+        external_hooks: FlowStateHooks | None = cast(FlowStateHooks | None, getattr(cls, f"on_{event}", None))
+        cls_hooks: FlowStateHooks | None = cast(FlowStateHooks | None, getattr(cls, f"_on_{event}", None))
 
         if external_hooks is None and cls_hooks is None:
             return None

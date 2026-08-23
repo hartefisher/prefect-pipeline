@@ -1,0 +1,78 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[cdp]"
+          pip install pytest pytest-asyncio pytest-cov pytest-mock ruff mypy
+
+      - name: Ruff (lint + import sort)
+        run: ruff check .
+
+      - name: Mypy (strict)
+        run: mypy src
+
+      - name: Ruff format check
+        run: ruff format --check .
+
+      - name: Pytest (unit + regression + e2e, exclude slow/integration)
+        run: pytest -m "not slow and not integration"
+
+      - name: Coverage gate (core >= 85% via JSON)
+        run: |
+          python - <<'PY'
+          import json, sys
+          try:
+              with open("coverage.json") as f:
+                  data = json.load(f)
+          except FileNotFoundError:
+              print("coverage.json not found; run pytest with --cov first")
+              sys.exit(1)
+          totals = data.get("totals", {})
+          overall = totals.get("percent_covered", 0.0)
+          if overall < 75:
+              print(f"FAIL: total coverage {overall:.1f}% < 75%")
+              sys.exit(1)
+          # Per-package core gate
+          pkgs = {k: v for k, v in data.get("files", {}).items() if k.startswith("src/prefect_pipeline/core")}
+          if pkgs:
+              cov = sum(v["summary"]["covered_lines"] for v in pkgs.values())
+              total = sum(v["summary"]["num_statements"] for v in pkgs.values())
+              pct = (cov / total * 100) if total else 100.0
+              print(f"core coverage: {pct:.1f}%")
+              if pct < 85:
+                  print(f"FAIL: core coverage {pct:.1f}% < 85%")
+                  sys.exit(1)
+          print(f"OK: total {overall:.1f}% (core gate passed)")
+          PY
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: |
+            coverage.xml
+            htmlcov/
+          if-no-files-found: ignore

@@ -17,7 +17,7 @@ class EmbeddingModel:
         from fastembed import TextEmbedding
 
         # 配置初始化参数
-        kwargs = {}
+        kwargs: dict[str, Any] = {}
         if max_seq_length:
             kwargs["max_length"] = max_seq_length
 
@@ -36,9 +36,7 @@ class EmbeddingModel:
         embedding_gen = self.model.embed(text)
         return next(iter(embedding_gen)).tolist()  # type: ignore[no-any-return]
 
-    def struct_point(
-        self, text: str, id: ExtendedPointId, payload: dict[str, Any]
-    ) -> PointStruct:
+    def struct_point(self, text: str, id: ExtendedPointId, payload: dict[str, Any]) -> PointStruct:
         """构建单个 Qdrant Point"""
         embedding = self.embed(text)
         return PointStruct(id=id, vector=embedding, payload=payload)
@@ -46,24 +44,17 @@ class EmbeddingModel:
     def embed_batch(self, texts: list[str], batch_size: int = 32) -> list[list[float]]:
         """批量处理文本，利用 fastembed 内置的并行能力"""
         # 使用 parallel 参数替代 sentence-transformers 的 pool
-        embeddings_gen = self.model.embed(
-            texts, batch_size=batch_size, parallel=self.parallel
-        )
+        embeddings_gen = self.model.embed(texts, batch_size=batch_size, parallel=self.parallel)
         # 将生成的 numpy array 转换为 Python 原生 list
         return [emb.tolist() for emb in embeddings_gen]
 
-    def struct_points(
-        self, points: list[Point], batch_size: int = 256
-    ) -> list[PointStruct]:
+    def struct_points(self, points: list[Point], batch_size: int = 256) -> list[PointStruct]:
         """构建批量 Qdrant Points"""
         texts = [p.text for p in points]
         # fastembed 处理批量数据非常快，默认 batch_size 可以调大一点 (例如 256)
         embeddings = self.embed_batch(texts, batch_size=batch_size)
 
-        return [
-            PointStruct(id=p.id, vector=embedding, payload=p.payload)
-            for embedding, p in zip(embeddings, points)
-        ]
+        return [PointStruct(id=p.id, vector=embedding, payload=p.payload) for embedding, p in zip(embeddings, points)]
 
     def clear(self) -> None:
         """清理资源"""

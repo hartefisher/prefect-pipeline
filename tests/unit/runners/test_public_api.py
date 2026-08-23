@@ -1,4 +1,5 @@
 """Public API export tests (M5.3, DESIGN §5)."""
+
 from __future__ import annotations
 
 import importlib

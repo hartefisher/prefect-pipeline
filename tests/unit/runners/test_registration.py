@@ -1,14 +1,8 @@
 """Runner registration, Overall-variant, and dependency-injection tests (M5.3)."""
+
 from __future__ import annotations
 
 import pytest
-from tests.unit.runners.conftest import (
-    ToyDataFetcher,
-    ToyDataTransformer,
-    ToyEmbeddingHandler,
-    ToyExtractor,
-    ToySpider,
-)
 
 from prefect_pipeline import (
     AggregationFlow,
@@ -19,6 +13,13 @@ from prefect_pipeline import (
     WebScrapingFlow,
 )
 from prefect_pipeline.core.deployment import Deployment
+from tests.unit.runners.conftest import (
+    ToyDataFetcher,
+    ToyDataTransformer,
+    ToyEmbeddingHandler,
+    ToyExtractor,
+    ToySpider,
+)
 
 
 # --------------------------------------------------------------------------- #

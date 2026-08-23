@@ -36,9 +36,7 @@ def test_async_qdrant_client_get_or_create_collection_creates():
 def test_embedding_model_struct_points_uses_mock_model():
     model = EmbeddingModel.__new__(EmbeddingModel)
     fake_embed = MagicMock()
-    fake_embed.embed.side_effect = lambda t, **kw: iter(
-        [np.array([0.1, 0.2]), np.array([0.3, 0.4])]
-    )
+    fake_embed.embed.side_effect = lambda t, **kw: iter([np.array([0.1, 0.2]), np.array([0.3, 0.4])])
     model.model = fake_embed
     model.parallel = None
 

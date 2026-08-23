@@ -66,19 +66,12 @@ class LLMExtractionStrategy:
     ) -> None:
         if isinstance(msg, Message):
             self.messages.append(msg)
-        elif (
-            self.messages
-            and self.messages[-1].get("role") == "assistant"
-            and msg is None
-            and image_urls is None
-        ):
+        elif self.messages and self.messages[-1].get("role") == "assistant" and msg is None and image_urls is None:
             self.messages.pop()
         elif msg is not None or image_urls is not None:
             images = (
                 [
-                    ImageURLListItem(
-                        image_url=ImageURLObject(url=url), index=i, type="image_url"
-                    )
+                    ImageURLListItem(image_url=ImageURLObject(url=url), index=i, type="image_url")
                     for i, url in enumerate(image_urls)
                 ]
                 if image_urls
@@ -157,24 +150,18 @@ class LLMExtractionStrategy:
 
 
 class BatchLLMExtractionStrategy(LLMExtractionStrategy):
-    async def perform_completion(
-        self, prompt: str | None = None, **kwargs: Any
-    ) -> ModelResponse | None:
+    async def perform_completion(self, prompt: str | None = None, **kwargs: Any) -> ModelResponse | None:
         self.update_messages(prompt)
 
         if response := cast(BatchResponse, kwargs.get("result")):
             if response["status_code"] == 200:
                 return ModelResponse(**response["body"])
             elif "error" in response["body"]:
-                raise BatchJobResponseError(
-                    response["status_code"], **response["body"]["error"]
-                )
+                raise BatchJobResponseError(response["status_code"], **response["body"]["error"])
         return None
 
 
-class LLMExtractor[Item: BaseItem](
-    AutoItemModel[Item], PipelineHelper, ExtraContextMixin
-):
+class LLMExtractor[Item: BaseItem](AutoItemModel[Item], PipelineHelper, ExtraContextMixin):
     schema_model: type[SchemaBase]
     ns: str = "extracted_content"
     verbose: bool = False
@@ -209,9 +196,7 @@ class LLMExtractor[Item: BaseItem](
     def output_field(self) -> str:
         return self.ns
 
-    async def get_instruction(
-        self, item: Item, instruction_variables: dict[str, Any] | None = None
-    ) -> str:
+    async def get_instruction(self, item: Item, instruction_variables: dict[str, Any] | None = None) -> str:
         variables = await self.get_instruction_variables(item)
         if instruction_variables:
             variables.update(instruction_variables)
@@ -252,9 +237,7 @@ class LLMExtractor[Item: BaseItem](
 
     async def run(self, item: Item, **kwargs: Any) -> dict[str, Any] | None:
         extra_data = await self.check_request(item)
-        instruction_variables = (
-            extra_data.get("instruction_variables") if extra_data else None
-        )
+        instruction_variables = extra_data.get("instruction_variables") if extra_data else None
         images = self.get_images(item)
         extraction_strategy = self.get_extraction_strategy(item.url)
         extracted_content: dict[str, Any] | str | None = "_EMPTY_"
@@ -304,9 +287,7 @@ class LLMExtractor[Item: BaseItem](
         if extracted_content is None:
             raise BadResponseError("Result is None.")
         if not extracted_content.get("error", False):
-            print(
-                f"Total usage for {item.url}: {extraction_strategy.total_usage.total_tokens} tokens"
-            )
+            print(f"Total usage for {item.url}: {extraction_strategy.total_usage.total_tokens} tokens")
             result = {
                 "url": item.url,
                 self.output_field: self.transform_result(item, extracted_content),

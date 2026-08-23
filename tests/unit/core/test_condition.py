@@ -1,4 +1,5 @@
 """Tests for prefect_pipeline.core.condition."""
+
 from __future__ import annotations
 
 from unittest.mock import Mock

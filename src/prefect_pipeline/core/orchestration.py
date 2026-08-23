@@ -147,9 +147,7 @@ class Orchestration:
         if not continuations:
             return result_str, outgoing_active
         elif len(continuations) == 1:
-            child_str, child_out = self.process(
-                continuations[0], outgoing_active, indent
-            )
+            child_str, child_out = self.process(continuations[0], outgoing_active, indent)
             return f"{result_str}{nl}{ind}>> {child_str}", child_out
         else:
             child_str, child_out = self.process(continuations, outgoing_active, indent)

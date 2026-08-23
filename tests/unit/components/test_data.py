@@ -1,9 +1,8 @@
 from unittest.mock import AsyncMock, MagicMock
 
-from tests.unit.components.conftest import ToyItem
-
 from prefect_pipeline.components.data import DataFetcher, DataTransformer
 from prefect_pipeline.components.helper import UrlSet
+from tests.unit.components.conftest import ToyItem
 
 
 class ToyFetcher(DataFetcher[ToyItem]):

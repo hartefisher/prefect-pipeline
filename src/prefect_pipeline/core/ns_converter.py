@@ -30,10 +30,7 @@ def capitalize_ns(ns: str | None) -> list[str]:
         return parts
     else:
         # 处理有分隔符的情况
-        return [
-            " ".join(pp.capitalize() for pp in p.replace("-", "_").split("_"))
-            for p in ns.split(".")
-        ]
+        return [" ".join(pp.capitalize() for pp in p.replace("-", "_").split("_")) for p in ns.split(".")]
 
 
 def gen_deployment_name(name: str, flags: list[str] | None = None) -> str:
@@ -69,6 +66,4 @@ def get_deployment_instance(flow_name: str, deployment_name: str) -> Deployment:
     if deployment:
         return deployment  # type: ignore[no-any-return]
     else:
-        raise ValueError(
-            f"Deployment '{deployment_name}' not found in flow '{flow_name}'."
-        )
+        raise ValueError(f"Deployment '{deployment_name}' not found in flow '{flow_name}'.")

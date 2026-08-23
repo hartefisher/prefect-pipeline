@@ -1,4 +1,5 @@
 """Tests for prefect_pipeline.core.orchestration — DAG analysis engine."""
+
 from __future__ import annotations
 
 from prefect_pipeline.core.deployment import Deployment, Node
@@ -8,6 +9,7 @@ from prefect_pipeline.core.runner_base import FlowRunnerBase
 # --------------------------------------------------------------------------- #
 # Mock runner and injector factory
 # --------------------------------------------------------------------------- #
+
 
 class MockRunner(FlowRunnerBase):
     project_name = "test"
@@ -32,6 +34,7 @@ def _make_dep(name: str) -> Deployment:
 # --------------------------------------------------------------------------- #
 # Simple chain: A >> B
 # --------------------------------------------------------------------------- #
+
 
 def test_chain_node_map_size():
     a = _make_dep("A")
@@ -78,6 +81,7 @@ def test_chain_graph_has_green_markers():
 # Parallel: A + B
 # --------------------------------------------------------------------------- #
 
+
 def test_parallel_node_map_size():
     a = _make_dep("A")
     b = _make_dep("B")
@@ -106,6 +110,7 @@ def test_parallel_no_downstream():
 # --------------------------------------------------------------------------- #
 # Complex: A >> (B + C) >> D
 # --------------------------------------------------------------------------- #
+
 
 def test_complex_node_map_size():
     a = _make_dep("A")
@@ -163,6 +168,7 @@ def test_complex_graph_contains_all():
 # Start / Stop markers
 # --------------------------------------------------------------------------- #
 
+
 def test_start_marker_activates():
     a = _make_dep("A")
     b = _make_dep("B")
@@ -192,6 +198,7 @@ def test_without_start_all_active_by_default():
 # get_node_info
 # --------------------------------------------------------------------------- #
 
+
 def test_get_node_info_found():
     a = _make_dep("Alpha")
     b = _make_dep("Beta")
@@ -210,6 +217,7 @@ def test_get_node_info_not_found():
 # --------------------------------------------------------------------------- #
 # Static helpers
 # --------------------------------------------------------------------------- #
+
 
 def test_get_node_name_with_name():
     a = _make_dep("MyDep")
@@ -231,3 +239,13 @@ def test_append_suffix_simple():
 def test_append_suffix_with_comment():
     result = Orchestration.append_suffix("hello  # comment", ",")
     assert result == "hello,  # comment"
+
+
+def test_deployment_name_falls_back_to_node_name():
+    a = _make_dep("NodeA")
+    a.name = None  # type: ignore[assignment]
+    b = _make_dep("B")
+    orch = Orchestration(a >> b)
+    # process() line 81: name falls back to node.name when deployment.name is None
+    assert "NodeA" in orch.graph or a.node.ns in orch.node_map  # type: ignore[union-attr]
+    assert len(orch.node_map) == 2

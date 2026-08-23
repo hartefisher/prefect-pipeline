@@ -13,9 +13,7 @@ from .base import PipelineFlow
 
 
 class WebScrapingFlow[Item: BaseItem](
-    PipelineFlow[
-        tuple[type[SpiderBase[Item]] | type[HTTPSpider[Item]], type[DataFetcher[Item]]]
-    ]
+    PipelineFlow[tuple[type[SpiderBase[Item]] | type[HTTPSpider[Item]], type[DataFetcher[Item]]]]
 ):
     """Scrape external sites for items via an injected :class:`SpiderBase`."""
 
@@ -75,9 +73,7 @@ class WebScrapingFlow[Item: BaseItem](
         items = await self.check_data()  # type: ignore[call-overload]
 
         semaphore = asyncio.Semaphore(self.spider.concurrent_requests)
-        await asyncio.gather(
-            *[self.request_and_upsert(semaphore, item) for item in items]
-        )
+        await asyncio.gather(*[self.request_and_upsert(semaphore, item) for item in items])
 
 
 class OverallWebScrapingFlow(WebScrapingFlow[BaseItem]):

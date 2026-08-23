@@ -66,17 +66,11 @@ class DataFetcher[OutputItem: BaseModel](AutoItemModel[OutputItem]):
         if isclass(self.item_model) and issubclass(self.item_model, BaseModel):
             if data is None:
                 return []
-            return [
-                cast(type[OutputItem], self.item_model)(**item)
-                for item in data
-                if isinstance(item, dict)
-            ]
+            return [cast(type[OutputItem], self.item_model)(**item) for item in data if isinstance(item, dict)]
         else:
             raise ItemModelMissing("Please add item type to class annotion.")
 
-    async def get_batch_data(
-        self, **kwargs: Unpack[QueryDict]
-    ) -> AsyncGenerator[list[dict[str, Any]], Any]:
+    async def get_batch_data(self, **kwargs: Unpack[QueryDict]) -> AsyncGenerator[list[dict[str, Any]], Any]:
         batch_size = kwargs.pop("batch_size", self.batch_size)
         cursor = self.query(**kwargs)
 
@@ -96,9 +90,7 @@ class DataFetcher[OutputItem: BaseModel](AutoItemModel[OutputItem]):
         else:
             await cursor.to_list()
 
-    async def get_batch_items(
-        self, **kwargs: Unpack[QueryDict]
-    ) -> AsyncGenerator[list[OutputItem], Any]:
+    async def get_batch_items(self, **kwargs: Unpack[QueryDict]) -> AsyncGenerator[list[OutputItem], Any]:
         batches = self.get_batch_data(**kwargs)
         async for batch in batches:
             yield self.wrap_item(batch)
@@ -114,9 +106,7 @@ class DataFetcher[OutputItem: BaseModel](AutoItemModel[OutputItem]):
         data = await self.get_data(**kwargs)
         return self.wrap_item(data)
 
-    def construct_pipeline(
-        self, **kwargs: Unpack[QueryDict]
-    ) -> Mapping[str, Any] | Sequence[Mapping[str, Any]]:
+    def construct_pipeline(self, **kwargs: Unpack[QueryDict]) -> Mapping[str, Any] | Sequence[Mapping[str, Any]]:
         if self.pipeline:
             if self.output_collection is not None and self.output_mode == "out":
                 if not self.sort:
@@ -126,9 +116,7 @@ class DataFetcher[OutputItem: BaseModel](AutoItemModel[OutputItem]):
         else:
             filter = {**self.filter, **kwargs.pop("filter", {})}
             projection = (
-                kwargs["projection"]
-                if "projection" in kwargs
-                else {k: 1 for k in self.item_model.model_fields}
+                kwargs["projection"] if "projection" in kwargs else {k: 1 for k in self.item_model.model_fields}
             )
             sort = {**self.sort, **kwargs.pop("sort", {})}
             return {
@@ -157,9 +145,7 @@ class DataTransformer[InputItem: BaseModel](DataFetcher[InputItem], ExtraContext
         self.processed_count = 0
         self.update_extra_context(**kwargs)
 
-    async def process_item(
-        self, item: InputItem
-    ) -> AsyncGenerator[UpdateOp | dict[str, Any], Any]:
+    async def process_item(self, item: InputItem) -> AsyncGenerator[UpdateOp | dict[str, Any], Any]:
         if isinstance(item, BaseModel):
             yield self.update_op(
                 item.model_dump(exclude_computed_fields=True, exclude_unset=True),
@@ -167,9 +153,7 @@ class DataTransformer[InputItem: BaseModel](DataFetcher[InputItem], ExtraContext
         else:
             yield self.update_op(item)
 
-    async def _check_index(
-        self, output_collection: AsyncIOMotorCollection[dict[str, Any]]
-    ) -> None:
+    async def _check_index(self, output_collection: AsyncIOMotorCollection[dict[str, Any]]) -> None:
         if not self.check_index or not self.ensure_unique:
             return
 
@@ -183,9 +167,7 @@ class DataTransformer[InputItem: BaseModel](DataFetcher[InputItem], ExtraContext
                 name=index_name,
             )
 
-    async def setup(
-        self, output_collection: AsyncIOMotorCollection[dict[str, Any]]
-    ) -> None:
+    async def setup(self, output_collection: AsyncIOMotorCollection[dict[str, Any]]) -> None:
         if (
             self.output_collection is not None
             and issubclass(self.update_op, IncOp)
@@ -196,11 +178,7 @@ class DataTransformer[InputItem: BaseModel](DataFetcher[InputItem], ExtraContext
         await self._check_index(output_collection)
 
     async def run(self, **kwargs: Unpack[QueryDict]) -> int:
-        output_collection = (
-            self.collection
-            if self.output_collection is None
-            else self.output_collection
-        )
+        output_collection = self.collection if self.output_collection is None else self.output_collection
 
         await self.setup(output_collection)
         transformed_data = self.transform(**kwargs)
@@ -218,9 +196,7 @@ class DataTransformer[InputItem: BaseModel](DataFetcher[InputItem], ExtraContext
             if not isinstance(fetched_item, UpdateOp):
                 fetched_item = self.update_op(fetched_item)
             index_value = tuple(fetched_item.filter.values())
-            if index_value is None or (
-                self.ensure_unique and index_value in self.unique_keys
-            ):
+            if index_value is None or (self.ensure_unique and index_value in self.unique_keys):
                 continue
             self.unique_keys.add(index_value)
 
@@ -231,22 +207,16 @@ class DataTransformer[InputItem: BaseModel](DataFetcher[InputItem], ExtraContext
 
         return fetched_items
 
-    async def process_concurrently(
-        self, semaphore: asyncio.Semaphore, item: InputItem
-    ) -> list[UpdateOp]:
+    async def process_concurrently(self, semaphore: asyncio.Semaphore, item: InputItem) -> list[UpdateOp]:
         async with semaphore:
             return await self.process(item)
 
-    async def transform(
-        self, **kwargs: Unpack[QueryDict]
-    ) -> AsyncGenerator[UpdateOp, Any]:
+    async def transform(self, **kwargs: Unpack[QueryDict]) -> AsyncGenerator[UpdateOp, Any]:
         batch = self.get_batch_items(**kwargs)
         async for items in batch:
             if self.concurrent_requests > 1:
                 semaphore = asyncio.Semaphore(self.concurrent_requests)
-                results = await asyncio.gather(
-                    *[self.process_concurrently(semaphore, item) for item in items]
-                )
+                results = await asyncio.gather(*[self.process_concurrently(semaphore, item) for item in items])
                 for result in results:
                     for fetched_item in result:
                         yield fetched_item
@@ -334,9 +304,7 @@ class SimilarityStats[InputItem: BaseModel](DataTransformer[InputItem]):
     def embed_key(self, item: InputItem) -> str:
         raise NotImplementedError("Must implement method embed_key.")
 
-    async def get_batch_items(
-        self, **kwargs: Unpack[QueryDict]
-    ) -> AsyncGenerator[list[InputItem], Any]:
+    async def get_batch_items(self, **kwargs: Unpack[QueryDict]) -> AsyncGenerator[list[InputItem], Any]:
         batch = super().get_batch_items(**kwargs)
 
         async for items in batch:
@@ -349,9 +317,7 @@ class SimilarityStats[InputItem: BaseModel](DataTransformer[InputItem]):
                 if text := self.text_to_embed(item):
                     texts_to_embed.append(text)
                     valid_items.append(item)
-            vectors: list[list[float]] = self.model.embed_batch(
-                texts_to_embed, batch_size=128
-            )
+            vectors: list[list[float]] = self.model.embed_batch(texts_to_embed, batch_size=128)
             print("start to query points.")
             query_responses = await self.query_batch_points(valid_items, vectors)
             print("points query completed.")
@@ -362,9 +328,7 @@ class SimilarityStats[InputItem: BaseModel](DataTransformer[InputItem]):
     async def construct_query(self, item: InputItem) -> dict[str, Any]:
         return {}
 
-    async def query_batch_points(
-        self, items: list[InputItem], vectors: list[list[float]]
-    ) -> Any:
+    async def query_batch_points(self, items: list[InputItem], vectors: list[list[float]]) -> Any:
         requests = []
         for item, vector in zip(items, vectors):
             extra = await self.construct_query(item)
