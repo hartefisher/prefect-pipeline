@@ -103,31 +103,34 @@ def test_deploy_creates_prefect_deployment(monkeypatch: pytest.MonkeyPatch):
     assert loader_obj.prefect_deployments == [fake_prefect_dep]
 
 
-def test_write_deployment_map(tmp_path, monkeypatch: pytest.MonkeyPatch):
+async def test_write_deployment_manifest(monkeypatch: pytest.MonkeyPatch):
     loader_obj = loader.FlowsLoader(version_id="v9", fp="")
     dep = _make_deployment("Fetch")
-    loader_obj.deployment_map[(("x", "y"), "z")] = {
+    loader_obj.deployment_map[("mod.Runner", "inj")] = {
         "instance": dep,
         "name": "Fetch",
         "flow_name": "demo",
         "qualname": "demo/Fetch",
     }
-    target = tmp_path / "generated" / "deployments.py"
-    monkeypatch.setattr(loader, "construct_dict_variable_snippet", lambda *a, **k: "SNIPPET")
 
-    # Redirect the generated-file path to tmp_path.
-    fake_path = MagicMock()
-    fake_path.resolve.return_value.parent.parent = tmp_path
-    monkeypatch.setattr(loader, "Path", lambda *a, **k: fake_path)
-    loader_obj.write_deployment_map()
+    fake_collection = MagicMock()
+    fake_collection.update_one = AsyncMock()
+    fake_prefect = MagicMock()
+    fake_prefect.deployment_manifest = fake_collection
+    fake_prefect.close = MagicMock()
+    monkeypatch.setattr(loader, "get_prefect", lambda: fake_prefect)
 
-    assert target.exists()
-    text = target.read_text(encoding="utf-8")
-    assert 'version_id = "v9"' in text
-    assert "SNIPPET" in text
+    await loader_obj.write_deployment_manifest()
+
+    fake_collection.update_one.assert_awaited_once()
+    filter_arg, update_arg = fake_collection.update_one.call_args[0]
+    assert filter_arg == {"ns": ["mod.Runner", "inj"], "version_id": "v9"}
+    assert update_arg["$set"]["qualname"] == "demo/Fetch"
+    assert update_arg["$set"]["ns"] == ["mod.Runner", "inj"]
+    fake_prefect.close.assert_called_once()
 
 
-def test_load_pipeline_runs_all_phases(monkeypatch: pytest.MonkeyPatch, tmp_path):
+async def test_load_pipeline_runs_all_phases(monkeypatch: pytest.MonkeyPatch):
     loader_obj = loader.FlowsLoader(version_id="v1", fp="")
     dep = _make_deployment("Fetch")
     loader_obj.flows["src.flows.demo"] = [dep]
@@ -135,14 +138,11 @@ def test_load_pipeline_runs_all_phases(monkeypatch: pytest.MonkeyPatch, tmp_path
     dep.workflow_pool = "default"  # type: ignore[attr-defined]
 
     fake_prefect_dep = MagicMock()
-    fake_path = MagicMock()
-    fake_path.resolve.return_value.parent.parent = tmp_path
-    monkeypatch.setattr(loader, "Path", lambda *a, **k: fake_path)
     with patch.object(loader.FlowsLoader, "_deploy", return_value=fake_prefect_dep):
-        with patch.object(loader.FlowsLoader, "write_deployment_map") as write_mock:
-            result = loader_obj.load()
+        with patch.object(loader.FlowsLoader, "write_deployment_manifest", new_callable=AsyncMock) as write_mock:
+            result = await loader_obj.load()
     assert result == [fake_prefect_dep]
-    write_mock.assert_called_once()
+    write_mock.assert_awaited_once()
     assert len(loader_obj.deployment_map) == 1
 
 

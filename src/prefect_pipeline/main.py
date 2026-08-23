@@ -14,7 +14,7 @@ from .core.loader import FlowsLoader  # noqa: E402
 async def main() -> None:
     """Framework entry point: load all deployments and serve them via Prefect."""
     pool: list[RunnerDeployment] = []
-    deployments = FlowsLoader(VERSION_ID).load()
+    deployments = await FlowsLoader(VERSION_ID).load()
     for deployment in deployments:
         if not isinstance(deployment, RunnerDeployment):
             deployment = await deployment

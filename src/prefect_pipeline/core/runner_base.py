@@ -37,7 +37,7 @@ from ..infra.db import MongoDB, get_prefect
 from ..infra.utils import get_current_time
 from ..models import DeploymentContext, ExtraContext
 from .condition import Condition
-from .configs import ENVIRONMENT, MACRO_VARIABLES, TIMEZONE
+from .configs import ENVIRONMENT, MACRO_VARIABLES, TIMEZONE, VERSION_ID
 from .ns_converter import get_deployment_instance
 
 if TYPE_CHECKING:
@@ -276,27 +276,18 @@ class FlowRunnerBase[Injectors: tuple[Callable[..., Any], ...] = tuple[Callable[
         pass
 
     # ------------------------------------------------------------------
-    # Deployment context (C3.1: generated.deployments import)
+    # Deployment context (version_id from env; manifest in MongoDB)
     # ------------------------------------------------------------------
 
     @classmethod
     async def get_deployment_context(cls, deployment_name: str) -> DeploymentContext | None:
-        # C3.1: version_id is written by FlowsLoader.write_deployment_map()
-        # into prefect_pipeline/generated/deployments.py. The import is lazy
-        # so the framework can be used without the generated module present.
-        try:
-            from ..generated.deployments import version_id
-        except ImportError:
-            print("Warning: generated.deployments module not found. Run FlowsLoader.load() to generate it.")
-            return None
-
         PREFECT: MongoDB = get_prefect()
         try:
             collection: AsyncIOMotorCollection[dict[str, Any]] = PREFECT.deployments
             record: dict[str, Any] | None = await collection.find_one(
                 {
                     "ns": deployment_name,
-                    "version_id": version_id,
+                    "version_id": VERSION_ID,
                     "environment": ENVIRONMENT,
                 },
                 {"_id": 0, "ns": 1, "active": 1, "downstream": 1, "peer_tails": 1},

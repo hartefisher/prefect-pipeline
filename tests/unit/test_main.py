@@ -21,7 +21,7 @@ async def test_main_assembles_and_serves_empty_pool():
     fake_deployments = []
 
     with (
-        patch.object(main.FlowsLoader, "load", return_value=fake_deployments),
+        patch.object(main.FlowsLoader, "load", new=AsyncMock(return_value=fake_deployments)),
         patch.object(prefect, "aserve", new=AsyncMock()) as mock_aserve,
     ):
         await main.main()
@@ -39,7 +39,7 @@ async def test_main_passes_deployments_to_aserve():
     fake_deployments = [RunnerDeployment(name="d1"), RunnerDeployment(name="d2")]
 
     with (
-        patch.object(main.FlowsLoader, "load", return_value=fake_deployments),
+        patch.object(main.FlowsLoader, "load", new=AsyncMock(return_value=fake_deployments)),
         patch.object(prefect, "aserve", new=AsyncMock()) as mock_aserve,
     ):
         await main.main()
