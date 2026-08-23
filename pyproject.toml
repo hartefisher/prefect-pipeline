@@ -7,7 +7,7 @@ name = "prefect_pipeline"
 version = "0.1.0.dev0"
 description = "A domain-agnostic, Prefect v3 based orchestration framework for LLM-driven data pipelines."
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 license = { text = "MIT" }
 authors = [{ name = "hartefisher" }]
 keywords = ["prefect", "pipeline", "llm", "orchestration", "etl"]
@@ -50,7 +50,7 @@ dev = [
 # ----------------------------------------------------------------------------
 [tool.ruff]
 line-length = 120
-target-version = "py312"
+target-version = "py313"
 src = ["src", "tests"]
 # 文档（.md）内含示例代码块，不由 ruff 格式化；README 等亦排除
 extend-exclude = ["docs", "README.md"]
@@ -66,7 +66,7 @@ known-first-party = ["prefect_pipeline"]
 "tests/**" = ["B"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 strict = true
 warn_unused_ignores = true
 warn_redundant_casts = true

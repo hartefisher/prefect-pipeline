@@ -1,6 +1,6 @@
 # M3 — 编排核心层迁移（PRD）
 
-> **状态**: 未开始
+> **状态**: 已完成
 > **前置**: M2（与 M4 可并行）
 > **GitHub Milestone**: `M3`
 > **总纲**: [../PRD.md](../PRD.md) · **设计**: [DESIGN.md](./DESIGN.md)
