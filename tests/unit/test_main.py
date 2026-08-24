@@ -1,48 +1,19 @@
 """Smoke test for the framework entry point (M6.4).
 
-Exercises ``main.main()`` without standing up a real Prefect server or loading
-real deployments: ``FlowsLoader.load`` is replaced with a stub and
-``prefect.aserve`` is mocked, so the entry-point assembly logic is covered.
+``prefect_pipeline.main`` 是薄封装：``python -m prefect_pipeline.main`` 会调用
+``run()``，进而委托给 ``serve.serve``（加载部署并 aserve）。装配逻辑由
+``tests/unit/test_serve.py`` 覆盖，这里只验证入口的委托关系。
 """
 
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
 
-import pytest
 
+def test_main_run_delegates_to_serve():
+    import prefect_pipeline.main as main
 
-@pytest.mark.asyncio
-async def test_main_assembles_and_serves_empty_pool():
-    import prefect
+    with patch("prefect_pipeline.serve.serve", new=AsyncMock()) as mock_serve:
+        main.run()
 
-    from prefect_pipeline import main
-
-    fake_deployments = []
-
-    with (
-        patch.object(main.FlowsLoader, "load", new=AsyncMock(return_value=fake_deployments)),
-        patch.object(prefect, "aserve", new=AsyncMock()) as mock_aserve,
-    ):
-        await main.main()
-
-    mock_aserve.assert_awaited_once_with(*fake_deployments)
-
-
-@pytest.mark.asyncio
-async def test_main_passes_deployments_to_aserve():
-    import prefect
-
-    from prefect_pipeline import main
-    from prefect_pipeline.main import RunnerDeployment
-
-    fake_deployments = [RunnerDeployment(name="d1"), RunnerDeployment(name="d2")]
-
-    with (
-        patch.object(main.FlowsLoader, "load", new=AsyncMock(return_value=fake_deployments)),
-        patch.object(prefect, "aserve", new=AsyncMock()) as mock_aserve,
-    ):
-        await main.main()
-
-    # aserve receives the deployments as positional args (already RunnerDeployment)
-    mock_aserve.assert_awaited_once_with(*fake_deployments)
+    mock_serve.assert_awaited_once_with(setup_hooks=None, version_id=None)
