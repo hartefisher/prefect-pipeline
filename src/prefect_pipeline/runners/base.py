@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, ClassVar, Literal
+from typing import Any, Literal
 
 from ..core.runner_base import FlowRunnerBase
 
@@ -17,8 +17,9 @@ class PipelineFlow[Injectors: tuple[type[Any], ...] = tuple[type[Any], ...]](Flo
     """Generic base class for all pipeline flows.
 
     Replaces the source project's ``ProductHuntFlow``. The ``project_name``
-    class attribute namespaces collections and log prefixes and **must** be set
-    by subclasses (the source project hardcoded ``"ph"`` here). The timezone is
+    namespace is supplied by the framework-level ``PROJECT_NAME`` config
+    (env-driven, defaults to ``"default"``), so business projects declare it
+    once in ``.env`` instead of hardcoding it on every runner. The timezone is
     delegated to the framework-level ``TIMEZONE`` config (defaults to UTC in
     :meth:`FlowRunnerBase.get_current_date`), so no per-flow timezone constant
     is required.
@@ -27,7 +28,6 @@ class PipelineFlow[Injectors: tuple[type[Any], ...] = tuple[type[Any], ...]](Flo
     component classes and :meth:`run` to drive them.
     """
 
-    project_name: ClassVar[str] = "default"
     dt_fmt: str = "%Y%m%d"
 
     def __init__(

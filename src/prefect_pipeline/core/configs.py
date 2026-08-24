@@ -23,6 +23,13 @@ WORKFLOW_POOL = os.getenv("WORKFLOW_POOL")
 VERSION_ID = os.getenv("VERSION_ID", "as8f9ds09ksd")
 # 框架默认时区，用于 get_current_date / flow_run_name 生成；业务项目可覆盖
 TIMEZONE = os.getenv("TIMEZONE", "UTC")
+# 项目命名空间（原示例业务项目硬编码在 runner 上的 "ph" 等前缀）。
+# 现统一为框架级配置，业务项目在 .env 中声明一次即可，无需在代码中写 project_name。
+PROJECT_NAME = os.getenv("PROJECT_NAME", "default")
+# DAG 编排入口契约：``<module>:<attr>``，默认指向业务项目的
+# ``src.orchestrations:get_orchestration(branch, start, stop)``。非标布局可通过
+# 该环境变量覆盖，框架的 DeploymentContextManager 据此注入业务 DAG。
+ORCHESTRATION_ENTRY = os.getenv("ORCHESTRATION_ENTRY", "src.orchestrations:get_orchestration")
 
 # 宏变量：由业务项目在启动时通过 register_macro_variables 注入，
 # 框架不预置任何业务前缀（原示例业务项目的 "demo" / "ph" 等前缀已全部移除）。

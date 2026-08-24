@@ -60,7 +60,13 @@ def get_deployment_instance(flow_name: str, deployment_name: str) -> Deployment:
     _project_name, *flow_ns = flow_name.split("-")
     module_name = f"{ROOT_PATH}.{'.'.join(flow_ns)}"
 
-    module = importlib.import_module(module_name)
+    try:
+        module = importlib.import_module(module_name)
+    except ModuleNotFoundError:
+        # 框架内置部署（如 DeploymentContextManager 的 ManageDeploymentContext）
+        # 不位于业务 flows 包下，统一从框架上下文模块解析。
+        module = importlib.import_module("prefect_pipeline.runners.context")
+
     dn = deployment_name.split("]")[-1].replace(" ", "")
     deployment = module.__dict__.get(dn)
     if deployment:

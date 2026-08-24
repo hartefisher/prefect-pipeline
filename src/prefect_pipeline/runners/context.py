@@ -1,9 +1,17 @@
 from __future__ import annotations
 
+import importlib
+from collections.abc import Callable
 from functools import cached_property
-from typing import ClassVar
+from typing import Any, ClassVar
 
-from ..core.configs import ENVIRONMENT, TIMEZONE, VERSION_ID
+from ..core.configs import (
+    ENVIRONMENT,
+    ORCHESTRATION_ENTRY,
+    PROJECT_NAME,
+    TIMEZONE,
+    VERSION_ID,
+)
 from ..core.orchestration import Orchestration
 from ..core.runner_base import FlowRunnerBase
 from ..infra.db import get_prefect
@@ -12,18 +20,27 @@ from ..infra.utils import get_current_time
 
 
 class DeploymentContextManager(FlowRunnerBase):
-    """通用部署上下文管理器 flow。
+    """通用部署上下文管理器 flow（开箱即用，业务侧无需子类化）。
 
-    业务侧继承并覆盖：
-    - ``project_name``：命名空间（如 ``"ph"``）
-    - ``get_orchestration(branch, start, stop)``：注入业务 DAG，返回 ``Orchestration``
+    默认实现按框架契约注入业务 DAG：
+
+    - ``ORCHESTRATION_ENTRY``（默认 ``src.orchestrations:get_orchestration``）
+      指向业务项目的 DAG 入口函数，签名为
+      ``get_orchestration(branch, start, stop) -> Orchestration``；
+    - ``start`` / ``stop`` 既可以是节点名字符串/列表，也可以直接是
+      ``Deployment`` 对象，框架统一归一化后透传给该入口；
+    - ``project_name`` 来自框架级配置 ``PROJECT_NAME``（env 驱动），
+      不再需要业务 runner 硬编码。
+
+    非标布局的业务项目只需覆写 :meth:`get_orchestration`，或通过
+    ``ORCHESTRATION_ENTRY`` 环境变量重定向 DAG 入口。
 
     框架承载通用逻辑：从 MongoDB 读部署清单（``deployment_manifest``）、计算
     各节点的 DAG 上下文（active/peer_tails/downstream）、写回 ``deployments``
     collection 供运行时 trigger 查询。
     """
 
-    project_name: ClassVar[str] = "default"
+    project_name: ClassVar[str] = PROJECT_NAME
 
     def __init__(
         self,
@@ -59,8 +76,27 @@ class DeploymentContextManager(FlowRunnerBase):
         start: list[str] | str | None,
         stop: list[str] | str | None,
     ) -> Orchestration:
-        """业务侧覆盖此方法，注入业务 DAG 并返回 :class:`Orchestration`。"""
-        raise NotImplementedError("业务子类需覆盖 get_orchestration 注入 DAG")
+        """按 ``ORCHESTRATION_ENTRY`` 契约注入业务 DAG。
+
+        默认实现解析 ``ORCHESTRATION_ENTRY``（``<module>:<attr>``），将
+        ``start`` / ``stop`` 中的节点名归一化为模块内同名对象后调用入口函数。
+        """
+        from typing import cast
+
+        from ..core.orchestration import Orchestration as _Orchestration
+
+        module_path, attr = ORCHESTRATION_ENTRY.split(":")
+        orch_module = importlib.import_module(module_path)
+        get_orchestration = cast("Callable[..., _Orchestration]", getattr(orch_module, attr))
+
+        def resolve(name: list[str] | str | None) -> Any:
+            if not name:
+                return None
+            if isinstance(name, list):
+                return [orch_module.__dict__[n] for n in name if n in orch_module.__dict__]
+            return orch_module.__dict__.get(name)
+
+        return get_orchestration(branch, start=resolve(start), stop=resolve(stop))
 
     @cached_property
     def orch(self) -> Orchestration:
@@ -119,3 +155,10 @@ class DeploymentContextManager(FlowRunnerBase):
 
     async def clear(self) -> None:
         pass
+
+
+# 框架提供的管理 flow，FlowsLoader 会自动注入部署池；业务项目无需任何文件。
+ManageDeploymentContext = DeploymentContextManager.deploy()
+assert ManageDeploymentContext.node is not None
+ManageDeploymentContext.name = "ManageDeploymentContext"
+ManageDeploymentContext.node._name = "ManageDeploymentContext"

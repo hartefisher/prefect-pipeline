@@ -37,7 +37,7 @@ from ..infra.db import MongoDB, get_prefect
 from ..infra.utils import get_current_time
 from ..models import DeploymentContext, ExtraContext
 from .condition import Condition
-from .configs import ENVIRONMENT, MACRO_VARIABLES, TIMEZONE, VERSION_ID
+from .configs import ENVIRONMENT, MACRO_VARIABLES, PROJECT_NAME, TIMEZONE, VERSION_ID
 from .ns_converter import get_deployment_instance
 
 if TYPE_CHECKING:
@@ -124,7 +124,7 @@ class FlowRunnerBase[Injectors: tuple[Callable[..., Any], ...] = tuple[Callable[
     tags: ClassVar[list[str]] = []
     flag: ClassVar[str | None] = None
     variant: ClassVar[str | None] = None
-    project_name: ClassVar[str] = "default"
+    project_name: ClassVar[str] = PROJECT_NAME
 
     def __init__(self, *args: Any, **extra: Any) -> None:
         self._extra: dict[str, Any] = extra

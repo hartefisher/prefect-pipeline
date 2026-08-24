@@ -164,10 +164,32 @@ class FlowsLoader:
             prefect_deployment: RunnerDeployment = self._deploy(detail["instance"], entrypoint)
             self.prefect_deployments.append(prefect_deployment)
 
+    def _inject_framework_deployments(self) -> None:
+        """把框架内置部署（如部署上下文管理器）自动注入部署池。
+
+        业务项目无需再写 ``src/flows/context_manager`` 之类的文件；框架统一
+        以稳定 module 名注册，下游 deployment_map / deploy / manifest 与手动
+        发现完全一致。已存在同名部署（如业务旧文件）时跳过，避免重复注册。
+        """
+        from ..runners.context import ManageDeploymentContext
+
+        # 全局去重：业务若在 src/flows 下仍保留了同名文件，不重复注册。
+        if any(d.name == "ManageDeploymentContext" for ds in self.flows.values() for d in ds):
+            return
+
+        module_name = "prefect_pipeline.runners.context"
+        if module_name not in self.flows:
+            self.flows[module_name] = []
+
+        # 上下文管理器是框架管理 flow，始终随业务一同部署。
+        ManageDeploymentContext.workflow_pool = WORKFLOW_POOL
+        self.flows[module_name].append(ManageDeploymentContext)
+
     async def load(self) -> PrefectDeploymentList:
         t1: float = time.perf_counter()
 
         self.iter_files(self.flows_dir)
+        self._inject_framework_deployments()
         self.render_deployment_map()
         self.deploy()
         await self.write_deployment_manifest()

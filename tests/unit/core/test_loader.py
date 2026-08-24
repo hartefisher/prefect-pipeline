@@ -141,9 +141,11 @@ async def test_load_pipeline_runs_all_phases(monkeypatch: pytest.MonkeyPatch):
     with patch.object(loader.FlowsLoader, "_deploy", return_value=fake_prefect_dep):
         with patch.object(loader.FlowsLoader, "write_deployment_manifest", new_callable=AsyncMock) as write_mock:
             result = await loader_obj.load()
-    assert result == [fake_prefect_dep]
+    # 业务部署 + 框架自动注入的 ManageDeploymentContext
+    assert len(result) == 2
+    assert result[0] == fake_prefect_dep
     write_mock.assert_awaited_once()
-    assert len(loader_obj.deployment_map) == 1
+    assert len(loader_obj.deployment_map) == 2
 
 
 def test_deploy_builds_real_prefect_deployment():

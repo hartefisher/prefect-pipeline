@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
-from prefect_pipeline.runners.context import DeploymentContextManager
+from prefect_pipeline.runners.context import DeploymentContextManager, ManageDeploymentContext
 
 
 class _ToyManager(DeploymentContextManager):
@@ -49,10 +47,34 @@ async def test_get_context_returns_none_for_unknown_ns():
     assert mgr.get_context(("x", "y")) is None
 
 
-async def test_get_orchestration_raises_not_implemented():
-    mgr = DeploymentContextManager()
-    with pytest.raises(NotImplementedError):
-        mgr.get_orchestration("main", None, None)
+async def test_default_get_orchestration_resolves_orchestration_entry(monkeypatch):
+    """默认实现按 ORCHESTRATION_ENTRY 契约注入业务 DAG。
+
+    验证 start/stop 中的节点名被归一化为编排模块内的同名对象后透传。
+    """
+    import prefect_pipeline.runners.context as ctx_mod
+
+    fake_orchestration = MagicMock(name="Orchestration")
+    orch_module = MagicMock()
+    orch_module.__dict__ = {
+        "StartNode": "START_OBJ",
+        "StopNode": "STOP_OBJ",
+        "get_orchestration": lambda branch, start, stop: (
+            fake_orchestration.__setattr__("call", (branch, start, stop)) or fake_orchestration
+        ),
+    }
+
+    monkeypatch.setattr(ctx_mod, "ORCHESTRATION_ENTRY", "src.orchestrations:get_orchestration")
+    monkeypatch.setattr(
+        "prefect_pipeline.runners.context.importlib.import_module",
+        lambda path: orch_module if path == "src.orchestrations" else __import__(path),
+    )
+
+    mgr = DeploymentContextManager(branch="dev")
+    result = mgr.get_orchestration("dev", ["StartNode"], "StopNode")
+
+    assert result is fake_orchestration
+    assert fake_orchestration.call == ("dev", ["START_OBJ"], "STOP_OBJ")
 
 
 async def test_run_writes_context_to_mongodb(monkeypatch):
@@ -80,3 +102,11 @@ async def test_run_writes_context_to_mongodb(monkeypatch):
     assert update_arg["$set"]["active"] is True
     assert update_arg["$set"]["peer_tails"] == []
     fake_prefect.close.assert_called_once()
+
+
+def test_framework_provides_manage_deployment_context():
+    """框架应开箱即用提供 ManageDeploymentContext，业务侧无需任何文件。"""
+    assert ManageDeploymentContext is not None
+    assert ManageDeploymentContext.name == "ManageDeploymentContext"
+    assert ManageDeploymentContext.node.runner is DeploymentContextManager
+
